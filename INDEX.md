@@ -63,8 +63,8 @@ Listing in this index does not imply endorsement of the content by the OpenLibra
 
 ---
 
-## Libraries
+## Public Libraries
 
-| Name | Maintainer | Formats | Encryption | Description | URL |
-|------|-----------|---------|-----------|-------------|-----|
-| Auchrio's Library | [@Auchrio](https://github.com/Auchrio) | EPUB · MOBI · PDF | Public (type 0) | A personal collection of books curated by Auchrio — the creator of this project. Titles Auchrio enjoys, spanning a range of genres. | `https://raw.githubusercontent.com/Auchrio/.library/refs/heads/main` |
+| Name | Maintainer | Formats | Description | URL |
+|------|-----------|---------|-------------|-----|
+| Auchrio's Library | [@Auchrio](https://github.com/Auchrio) | EPUB · MOBI · PDF | A personal collection of books curated by Auchrio — the creator of this project. Titles Auchrio enjoys, spanning a range of genres. | `https://raw.githubusercontent.com/Auchrio/.library/refs/heads/main` |
