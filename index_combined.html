@@ -332,6 +332,8 @@
     .dl-prog-label{position:relative;z-index:1;font-size:.8rem;
       white-space:nowrap;padding:0 8px;letter-spacing:.01em}
     .hint{font-size:.77rem;color:var(--muted);margin-top:6px}
+    .hint code{background:var(--tag-bg);border:1px solid var(--border);
+      border-radius:4px;padding:1px 5px;font-size:.76rem;color:var(--text)}
 
     /* ── Scrollbar ── */
     ::-webkit-scrollbar{width:6px;height:6px}
@@ -421,8 +423,8 @@
   <div class="modal-box dlg-box">
     <div class="dlg-title">🔗 Add Library Source</div>
     <label class="dlg-label">Library base URL</label>
-    <input class="dlg-input" id="addUrl" placeholder="https://raw.githubusercontent.com/user/repo/main  or  http://localhost:8080/test">
-    <p class="hint">The URL should point to the folder containing <strong>lib.json</strong>.</p>
+    <input class="dlg-input" id="addUrl" placeholder="github:user/repo  or  https://raw.githubusercontent.com/user/repo/main  or  http://localhost:8080">
+    <p class="hint">Use <code>github:user/repo</code> as a shorthand, or paste the full URL to the folder containing <strong>lib.json</strong>.</p>
     <div class="error-msg" id="addError"></div>
     <div class="preview-box" id="addPreview">
       <div class="preview-name" id="prevName"></div>
@@ -551,7 +553,13 @@ const state = {
 };
 
 function normaliseUrl(url) {
-  return url.trim().replace(/\/+$/, '');
+  url = url.trim();
+  // github:owner/repo  →  https://raw.githubusercontent.com/owner/repo/refs/heads/main
+  const ghMatch = url.match(/^github:([A-Za-z0-9_.-]+\/[A-Za-z0-9_.\-]+?)\/?$/i);
+  if (ghMatch) {
+    url = `https://raw.githubusercontent.com/${ghMatch[1]}/refs/heads/main`;
+  }
+  return url.replace(/\/+$/, '');
 }
 
 async function fetchLib(url) {
@@ -1131,6 +1139,8 @@ async function previewLibrary() {
   const raw = document.getElementById('addUrl').value.trim();
   if (!raw) return showAddError('Please enter a URL.');
   const url = normaliseUrl(raw);
+  // If shorthand was expanded, reflect the resolved URL back into the input
+  if (url !== raw) document.getElementById('addUrl').value = url;
   if (state.sources.find(s => normaliseUrl(s.url) === url)) {
     return showAddError('This source is already in your library list.');
   }

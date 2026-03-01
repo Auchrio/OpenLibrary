@@ -83,7 +83,13 @@ const state = {
 };
 
 function normaliseUrl(url) {
-  return url.trim().replace(/\/+$/, '');
+  url = url.trim();
+  // github:owner/repo  →  https://raw.githubusercontent.com/owner/repo/refs/heads/main
+  const ghMatch = url.match(/^github:([A-Za-z0-9_.-]+\/[A-Za-z0-9_.\-]+?)\/?$/i);
+  if (ghMatch) {
+    url = `https://raw.githubusercontent.com/${ghMatch[1]}/refs/heads/main`;
+  }
+  return url.replace(/\/+$/, '');
 }
 
 async function fetchLib(url) {
@@ -663,6 +669,8 @@ async function previewLibrary() {
   const raw = document.getElementById('addUrl').value.trim();
   if (!raw) return showAddError('Please enter a URL.');
   const url = normaliseUrl(raw);
+  // If shorthand was expanded, reflect the resolved URL back into the input
+  if (url !== raw) document.getElementById('addUrl').value = url;
   if (state.sources.find(s => normaliseUrl(s.url) === url)) {
     return showAddError('This source is already in your library list.');
   }
