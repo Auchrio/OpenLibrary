@@ -33,6 +33,27 @@ const (
 // Encryption helpers
 // ────────────────────────────────────────────────────────────────────────────
 
+// decryptWithPassword decrypts data produced by encryptWithPassword.
+// Expected format: [Salt(16)][Nonce(12)][Ciphertext].
+func decryptWithPassword(data []byte, password string) ([]byte, error) {
+	if len(data) < saltSize+nonceSize {
+		return nil, fmt.Errorf("ciphertext too short")
+	}
+	salt := data[:saltSize]
+	nonce := data[saltSize : saltSize+nonceSize]
+	ct := data[saltSize+nonceSize:]
+	key := pbkdf2.Key([]byte(password), salt, iterations, keySize, sha256.New)
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	return gcm.Open(nil, nonce, ct, nil)
+}
+
 // encryptWithPassword encrypts plaintext with a PBKDF2-derived key.
 // Output format: [Salt(16)][Nonce(12)][Ciphertext] — matches JS decryptWithPassword.
 func encryptWithPassword(plaintext []byte, password string) ([]byte, error) {
@@ -330,6 +351,7 @@ type IndexEntry struct {
 	SourceKey   string      `json:"source_key"` // hex-encoded 32 random bytes
 	FileSize    interface{} `json:"filesize"`   // int64 (single) or map[string]int64 (multi)
 	Formats     []string    `json:"formats"`
+	Stem        string      `json:"stem,omitempty"` // lowercase filename stem used during indexing; dedup key
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -357,6 +379,44 @@ func main() {
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		fmt.Fprintf(os.Stderr, "mkdir: %v\n", err)
 		os.Exit(1)
+	}
+
+	// ── Load existing lib.json if present (incremental build).
+	// We decrypt the existing index, carry all previous entries forward, and
+	// skip any input group whose stem is already recorded — so files that
+	// were encrypted on a previous run are never re-processed.
+	libPath := filepath.Join(outputDir, "lib.json")
+	existingIndex := map[string]IndexEntry{}
+	existingStems := map[string]bool{}
+	existingLibName := "OpenLibrary Datastore"
+	existingLinks := map[string]interface{}{}
+
+	if raw, err := os.ReadFile(libPath); err == nil {
+		var oldLib LibJSON
+		if json.Unmarshal(raw, &oldLib) == nil {
+			decoded, err := base64.StdEncoding.DecodeString(oldLib.Index)
+			if err == nil {
+				if plain, err := decryptWithPassword(decoded, password); err == nil {
+					if json.Unmarshal(plain, &existingIndex) == nil {
+						for _, e := range existingIndex {
+							if e.Stem != "" {
+								existingStems[e.Stem] = true
+							}
+						}
+						fmt.Printf("Loaded existing index: %d books already indexed.\n", len(existingIndex))
+					}
+				} else {
+					fmt.Fprintln(os.Stderr, "Warning: could not decrypt existing lib.json (wrong password?). Starting fresh.")
+					existingIndex = map[string]IndexEntry{}
+				}
+			}
+			if oldLib.Name != "" {
+				existingLibName = oldLib.Name
+			}
+			if oldLib.Links != nil {
+				existingLinks = oldLib.Links
+			}
+		}
 	}
 
 	// ── Phase 1: collect EPUB files first, keyed by lowercase filename stem.
@@ -434,11 +494,29 @@ func main() {
 		return
 	}
 
-	fmt.Printf("Building library (encryption_type %d) from %d books...\n\n", encType, len(groups))
+	// Count genuinely new books (not already indexed).
+	newCount := 0
+	for stem := range groups {
+		if !existingStems[stem] {
+			newCount++
+		}
+	}
+	if newCount == 0 {
+		fmt.Println("All books are already indexed. Nothing to do.")
+		return
+	}
+	fmt.Printf("Building library (encryption_type %d): %d new book(s), %d already indexed.\n\n",
+		encType, newCount, len(existingIndex))
 
-	index := map[string]IndexEntry{}
+	// Start index from the existing entries; new books are merged in below.
+	index := existingIndex
 
-	for _, g := range groups {
+	for stem, g := range groups {
+		// Skip books already in the index.
+		if existingStems[stem] {
+			continue
+		}
+
 		id := generateID()
 		fileKey, fileKeyHex := generateKey()
 
@@ -489,6 +567,7 @@ func main() {
 			}
 			entry.Source = encFile
 			entry.FileSize = g.FileSizes[fmtName]
+			entry.Stem = stem
 		} else {
 			srcMap := map[string]string{}
 			sizeMap := map[string]int64{}
@@ -509,6 +588,7 @@ func main() {
 			}
 			entry.Source = srcMap
 			entry.FileSize = sizeMap
+			entry.Stem = stem
 		}
 
 		index[id] = entry
@@ -532,9 +612,9 @@ func main() {
 	}
 
 	lib := LibJSON{
-		Name:           "OpenLibrary Datastore",
+		Name:           existingLibName,
 		EncryptionType: encType,
-		Links:          map[string]interface{}{},
+		Links:          existingLinks,
 		Index:          base64.StdEncoding.EncodeToString(encIndex),
 	}
 	libData, _ := json.MarshalIndent(lib, "", "  ")
