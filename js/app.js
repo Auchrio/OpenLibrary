@@ -451,16 +451,6 @@ function openBookModal(book) {
   const uniqueFormats = [...new Set(book.formatEntries.map(fe => fe.format))];
   document.getElementById('bmFormats').textContent = uniqueFormats.join(', ') || '—';
 
-  // Per-format file sizes (with source label when merged)
-  const sizeLines = book.formatEntries
-    .filter(fe => fe.filesize != null)
-    .map(fe => {
-      const label = book.merged
-        ? `${fe.format.toUpperCase()} (${fe.libName})`
-        : fe.format.toUpperCase();
-      return `${label}: ${CRYPTO.formatBytes(fe.filesize)}`;
-    });
-  document.getElementById('bmSize').textContent = sizeLines.length ? sizeLines.join(',\u2002') : '—';
 
   // Source label in header tag
   const srcNames = [...new Set(book.formatEntries.map(fe => fe.libName))];
@@ -503,10 +493,33 @@ function openBookModal(book) {
       btn.innerHTML = `⬇ ${fmtLabel}${srcLabel}${sizeLabel}`;
       btn.addEventListener('click', () => downloadBook(fe, book.entry, btn));
       btns.appendChild(btn);
+      // Read button for EPUB entries
+      if (fe.format === 'epub' && fe.sourceFile) {
+        const readBtn = document.createElement('a');
+        readBtn.className = 'btn-dl btn-read';
+        readBtn.href = buildReaderUrl(fe, book.entry.title || '');
+        readBtn.target = '_blank';
+        readBtn.rel = 'noopener noreferrer';
+        readBtn.innerHTML = `Read Online${book.merged ? ` (${fe.libName})` : ''}`;
+        btns.appendChild(readBtn);
+      }
     }
   }
 
   document.getElementById('bookOverlay').classList.add('open');
+}
+
+function buildReaderUrl(fe, title) {
+  const params = JSON.stringify({
+    src:     `${normaliseUrl(fe.libUrl)}/${fe.sourceFile}`,
+    key:     fe.sourceKey,
+    title:   title || '',
+    libHash: location.hash
+  });
+  // base64url encode
+  const b64 = btoa(unescape(encodeURIComponent(params)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  return 'reader/index.html#' + b64;
 }
 
 async function downloadBook(fe, entry, btn) {

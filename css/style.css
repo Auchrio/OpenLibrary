@@ -264,6 +264,8 @@
       transition:opacity var(--transition),transform var(--transition)}
     .btn-dl:hover{opacity:.75;transform:translateY(-1px)}
     .btn-dl:disabled{opacity:.45;transform:none;cursor:wait}
+    .btn-read{text-decoration:none;cursor:pointer}
+    .btn-read:hover{opacity:.75;transform:translateY(-1px)}
     .bm-close{position:absolute;top:14px;right:14px;background:none;border:none;
       color:var(--muted);font-size:1.4rem;line-height:1;padding:4px;
       transition:color var(--transition)}

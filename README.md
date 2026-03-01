@@ -3,12 +3,16 @@
 A decentralised, encrypted ebook library system with no authentication, no usage limits, and no single point of failure.  
 Books are served from ordinary file hosts (GitHub, any raw HTTP server). The web UI runs entirely in the browser — no backend, no tracking, no accounts.
 
+> **📚 Public Libraries** — see [INDEX.md](INDEX.md) for a list of publicly available libraries you can add as sources right now.  
+> **⚙️ Technical Deep-Dive** — see [TECHNICALS.md](TECHNICALS.md) for a detailed explanation of how everything works under the hood.
+
 ---
 
 ## Table of Contents
 
 - [How it Works](#how-it-works)
 - [Using the Web UI](#using-the-web-ui)
+- [The In-Browser EPUB Reader](#the-in-browser-epub-reader)
 - [The Library Format](#the-library-format)
   - [Repository Layout](#repository-layout)
   - [lib.json Structure](#libjson-structure)
@@ -62,7 +66,41 @@ Neither part ever communicates with a central server. The web UI fetches files d
 ### Book Deduplication
 
 If the same book (matched by **title + author + series**, case-insensitive) appears in more than one loaded library, the UI merges them into a single card. Download buttons in the detail view are labelled by both format and source name — e.g. `⬇ EPUB (Auchrio's Library) 1.4 MB` — so you can still choose which copy to download.
+---
 
+## The In-Browser EPUB Reader
+
+OpenLibrary includes a full EPUB reader that runs entirely in the browser. No file is ever uploaded to a server; everything is decrypted and rendered locally.
+
+### Opening a Book
+
+- **From the library** — click any book card whose library has EPUB files, then click **Read Online** in the detail panel. The reader opens in a new tab.
+- **Standalone** — navigate directly to `reader/index.html`. A drop zone is shown; drag-and-drop or click to choose any plain (unencrypted) `.epub` file from your device.
+
+### Reader Features
+
+| Feature | Detail |
+|---------|--------|
+| **Themes** | Auto (follows system), Light, Dark, Sepia |
+| **Font size** | Small / Medium / Large / X-Large |
+| **Font family** | Serif, Sans-serif, Monospace |
+| **TOC sidebar** | Full table of contents parsed from EPUB3 nav.xhtml or EPUB2 NCX; collapses/expands with the ☰ button |
+| **Chapter navigation** | ← Prev / Next → buttons; left/right arrow keys; swipe left/right on touch screens |
+| **Scroll-to-turn** | Scrolling past the very bottom of a chapter advances to the next; scrolling above the top goes back to the previous (and lands at the bottom for continuity) |
+| **Progress saving** | Last-read chapter is saved in `localStorage` keyed by book URL, so progress is restored on revisit |
+| **Back to library** | The ← Library button returns to the exact library session (all sources loaded) that opened the reader |
+
+### How the Reader Works (High Level)
+
+1. The library passes the encrypted file URL, per-book decryption key, title, and library hash to the reader via a base64url-encoded JSON fragment in the URL hash.
+2. The reader fetches the encrypted `.enc` file, decrypts it with AES-256-GCM using the per-book key, and obtains a raw EPUB zip.
+3. The zip is parsed entirely in JS (no native APIs): EOCD → central directory → local file headers; DEFLATE decompression via `DecompressionStream('deflate-raw')`.
+4. `META-INF/container.xml` → OPF path → spine order + manifest + TOC location.
+5. Binary assets (images, fonts) become Blob URLs; CSS files are rewritten to replace all `url()` references with those Blob URLs.
+6. Each chapter's XHTML is rewritten similarly, then injected into a sandboxed `<iframe>` via `srcdoc` with an injected `<style>` block applying the reader's theme and font settings.
+7. Clicks inside the iframe are intercepted to handle in-book navigation and open external links in a new tab.
+
+For a complete technical description see [TECHNICALS.md](TECHNICALS.md).
 ---
 
 ## The Library Format
@@ -274,6 +312,12 @@ OpenLibrary/
 │   └── style.css         ← All styles (dark/light themes, grid, modals, …)
 ├── js/
 │   └── app.js            ← All application logic (crypto, rendering, state, …)
+├── reader/
+│   ├── index.html        ← EPUB reader shell
+│   ├── css/
+│   │   └── reader.css    ← Reader styles (themes, TOC sidebar, toolbar, nav bar)
+│   └── js/
+│       └── reader.js     ← Reader logic (ZIP parser, EPUB parser, blob URL rewriter, …)
 ├── build_combined.sh     ← Builds index_combined.html (portable single-file)
 ├── serve.py              ← CORS-enabled local dev server (replaces python3 -m http.server)
 ├── library.go            ← Go CLI for building encrypted libraries
@@ -283,12 +327,15 @@ OpenLibrary/
 │   └── *.enc
 ├── Overview.md           ← Original project specification
 ├── INDEX.md              ← Community library index
+├── TECHNICALS.md         ← Technical deep-dive
 └── README.md             ← This file
 ```
 
 ---
 
 ## Technical Reference
+
+For the full technical deep-dive see **[TECHNICALS.md](TECHNICALS.md)**, which covers the ZIP parser, EPUB structure parsing, Blob URL rewriting, iframe sandboxing, CORS, and more.
 
 ### Web Crypto Parameters
 

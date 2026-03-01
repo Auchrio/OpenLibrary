@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenLibrary</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
   <!-- Apply saved theme before first paint to prevent flash -->
   <script>(function(){try{var t=localStorage.getItem('ol-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t;}catch(e){}}());</script>
   <style>
@@ -272,6 +273,8 @@
       transition:opacity var(--transition),transform var(--transition)}
     .btn-dl:hover{opacity:.75;transform:translateY(-1px)}
     .btn-dl:disabled{opacity:.45;transform:none;cursor:wait}
+    .btn-read{text-decoration:none;cursor:pointer}
+    .btn-read:hover{opacity:.75;transform:translateY(-1px)}
     .bm-close{position:absolute;top:14px;right:14px;background:none;border:none;
       color:var(--muted);font-size:1.4rem;line-height:1;padding:4px;
       transition:color var(--transition)}
@@ -394,10 +397,6 @@
         <div class="meta-row">
           <span class="meta-label">Formats</span>
           <span class="meta-value" id="bmFormats"></span>
-        </div>
-        <div class="meta-row">
-          <span class="meta-label">File size</span>
-          <span class="meta-value" id="bmSize"></span>
         </div>
         <div class="meta-row" id="bmIdRow">
           <span class="meta-label">ID</span>
@@ -912,16 +911,6 @@ function openBookModal(book) {
   const uniqueFormats = [...new Set(book.formatEntries.map(fe => fe.format))];
   document.getElementById('bmFormats').textContent = uniqueFormats.join(', ') || '—';
 
-  // Per-format file sizes (with source label when merged)
-  const sizeLines = book.formatEntries
-    .filter(fe => fe.filesize != null)
-    .map(fe => {
-      const label = book.merged
-        ? `${fe.format.toUpperCase()} (${fe.libName})`
-        : fe.format.toUpperCase();
-      return `${label}: ${CRYPTO.formatBytes(fe.filesize)}`;
-    });
-  document.getElementById('bmSize').textContent = sizeLines.length ? sizeLines.join(',\u2002') : '—';
 
   // Source label in header tag
   const srcNames = [...new Set(book.formatEntries.map(fe => fe.libName))];
@@ -964,10 +953,33 @@ function openBookModal(book) {
       btn.innerHTML = `⬇ ${fmtLabel}${srcLabel}${sizeLabel}`;
       btn.addEventListener('click', () => downloadBook(fe, book.entry, btn));
       btns.appendChild(btn);
+      // Read button for EPUB entries
+      if (fe.format === 'epub' && fe.sourceFile) {
+        const readBtn = document.createElement('a');
+        readBtn.className = 'btn-dl btn-read';
+        readBtn.href = buildReaderUrl(fe, book.entry.title || '');
+        readBtn.target = '_blank';
+        readBtn.rel = 'noopener noreferrer';
+        readBtn.innerHTML = `Read Online${book.merged ? ` (${fe.libName})` : ''}`;
+        btns.appendChild(readBtn);
+      }
     }
   }
 
   document.getElementById('bookOverlay').classList.add('open');
+}
+
+function buildReaderUrl(fe, title) {
+  const params = JSON.stringify({
+    src:     `${normaliseUrl(fe.libUrl)}/${fe.sourceFile}`,
+    key:     fe.sourceKey,
+    title:   title || '',
+    libHash: location.hash
+  });
+  // base64url encode
+  const b64 = btoa(unescape(encodeURIComponent(params)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  return 'reader/index.html#' + b64;
 }
 
 async function downloadBook(fe, entry, btn) {

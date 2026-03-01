@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenLibrary Reader</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+  <script>(function(){try{var t=localStorage.getItem('ol-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t;}catch(e){}}());</script>
+  <link rel="stylesheet" href="css/reader.css">
+</head>
+<body>
+
+<!-- ── Top toolbar ── -->
+<div class="toolbar" id="toolbar">
+  <div class="toolbar-left">
+    <button class="tool-btn" id="btnToc" title="Table of contents">☰</button>
+    <a class="tool-btn back-btn" id="btnBack" href="../index.html" title="Back to library">← Library</a>
+  </div>
+  <div class="toolbar-title" id="toolbarTitle">Loading…</div>
+  <div class="toolbar-right">
+    <button class="tool-btn" id="btnSettings" title="Settings">⚙</button>
+  </div>
+</div>
+
+<!-- ── Settings panel ── -->
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-row">
+    <span class="settings-label">Theme</span>
+    <div class="btn-group">
+      <button class="seg-btn" data-theme="auto">Auto</button>
+      <button class="seg-btn" data-theme="light">Light</button>
+      <button class="seg-btn" data-theme="dark">Dark</button>
+      <button class="seg-btn" data-theme="sepia">Sepia</button>
+    </div>
+  </div>
+  <div class="settings-row">
+    <span class="settings-label">Font size</span>
+    <div class="btn-group">
+      <button class="seg-btn" data-size="small">A</button>
+      <button class="seg-btn active" data-size="medium">A</button>
+      <button class="seg-btn" data-size="large">A</button>
+      <button class="seg-btn" data-size="xlarge">A</button>
+    </div>
+  </div>
+  <div class="settings-row">
+    <span class="settings-label">Font</span>
+    <div class="btn-group">
+      <button class="seg-btn active" data-font="serif">Serif</button>
+      <button class="seg-btn" data-font="sans">Sans</button>
+      <button class="seg-btn" data-font="mono">Mono</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main layout ── -->
+<div class="reader-layout" id="readerLayout">
+
+  <!-- TOC sidebar -->
+  <nav class="toc-sidebar" id="tocSidebar">
+    <div class="toc-header">Contents</div>
+    <div class="toc-list" id="tocList"></div>
+  </nav>
+  <div class="toc-backdrop" id="tocBackdrop"></div>
+
+  <!-- Reading pane -->
+  <div class="reading-pane" id="readingPane">
+
+    <!-- Loading / error overlay -->
+    <div class="reader-status" id="readerStatus">
+      <div class="status-inner">
+        <div class="status-spinner" id="statusSpinner"></div>
+        <div class="status-msg" id="statusMsg">Loading book…</div>
+      </div>
+    </div>
+
+    <!-- Upload zone (shown when no book is specified) -->
+    <div class="upload-zone hidden" id="uploadZone">
+      <div class="upload-inner" id="uploadInner">
+        <div class="upload-icon">📖</div>
+        <div class="upload-title">Open an EPUB file</div>
+        <div class="upload-sub">Drag and drop an .epub here, or click to browse</div>
+        <label class="upload-btn">Choose File
+          <input type="file" id="epubFileInput" accept=".epub" style="display:none">
+        </label>
+      </div>
+    </div>
+
+    <!-- EPUB content iframe -->
+    <iframe id="epubFrame" class="epub-frame" sandbox="allow-same-origin allow-scripts" title="Book content"></iframe>
+
+  </div>
+</div>
+
+<!-- ── Bottom nav bar ── -->
+<div class="nav-bar" id="navBar">
+  <button class="nav-btn" id="btnPrev">← Prev</button>
+  <div class="nav-info">
+    <span id="chapterLabel">Chapter 1</span>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+  <button class="nav-btn" id="btnNext">Next →</button>
+</div>
+
+<script src="js/reader.js"></script>
+</body>
+</html>
