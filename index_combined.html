@@ -323,6 +323,14 @@
       border:2px solid rgba(128,128,128,.35);border-top-color:currentColor;
       border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
     @keyframes spin{to{transform:rotate(360deg)}}
+    .dl-prog-wrap{position:relative;display:inline-flex;align-items:center;
+      min-width:170px;height:1.15em;background:rgba(0,0,0,.18);
+      border-radius:4px;overflow:hidden}
+    .dl-prog-bar{position:absolute;left:0;top:0;height:100%;
+      background:rgba(255,255,255,.32);border-radius:4px;
+      transition:width .12s linear}
+    .dl-prog-label{position:relative;z-index:1;font-size:.8rem;
+      white-space:nowrap;padding:0 8px;letter-spacing:.01em}
     .hint{font-size:.77rem;color:var(--muted);margin-top:6px}
 
     /* ── Scrollbar ── */
@@ -896,6 +904,15 @@ function renderPagination() {
 // ═══════════════════════════════════════════════════════════════
 function openBookModal(book) {
   const e = book.entry;
+  // Guard: if the modal elements are missing (e.g. stale cached HTML served
+  // without the current markup), bail out rather than throwing an unhandled error.
+  if (!document.getElementById('bmTitle')) {
+    console.error(
+      '[OpenLibrary] openBookModal: modal elements not found in DOM. ' +
+      'Try a hard-refresh (Ctrl+Shift+R) to reload the latest index.html.'
+    );
+    return;
+  }
   document.getElementById('bmTitle').textContent = e.title || 'Untitled';
   document.getElementById('bmAuthor').textContent = e.author || 'Unknown author';
   document.getElementById('bmId').textContent = book.id;
@@ -944,16 +961,8 @@ function openBookModal(book) {
   if (book.formatEntries.length === 0) {
     btns.innerHTML = '<span style="color:var(--muted);font-size:.82rem">No downloadable formats found.</span>';
   } else {
+    // Read Online first
     for (const fe of book.formatEntries) {
-      const btn = document.createElement('button');
-      btn.className = 'btn-dl';
-      const fmtLabel = fe.format.toUpperCase();
-      const srcLabel = book.merged ? ` (${fe.libName})` : '';
-      const sizeLabel = fe.filesize ? `\u2002${CRYPTO.formatBytes(fe.filesize)}` : '';
-      btn.innerHTML = `⬇ ${fmtLabel}${srcLabel}${sizeLabel}`;
-      btn.addEventListener('click', () => downloadBook(fe, book.entry, btn));
-      btns.appendChild(btn);
-      // Read button for EPUB entries
       if (fe.format === 'epub' && fe.sourceFile) {
         const readBtn = document.createElement('a');
         readBtn.className = 'btn-dl btn-read';
@@ -963,6 +972,17 @@ function openBookModal(book) {
         readBtn.innerHTML = `Read Online${book.merged ? ` (${fe.libName})` : ''}`;
         btns.appendChild(readBtn);
       }
+    }
+    // Download buttons
+    for (const fe of book.formatEntries) {
+      const btn = document.createElement('button');
+      btn.className = 'btn-dl';
+      const fmtLabel = fe.format.toUpperCase();
+      const srcLabel = book.merged ? ` (${fe.libName})` : '';
+      const sizeLabel = fe.filesize ? `\u2002${CRYPTO.formatBytes(fe.filesize)}` : '';
+      btn.innerHTML = `⬇ ${fmtLabel}${srcLabel}${sizeLabel}`;
+      btn.addEventListener('click', () => downloadBook(fe, book.entry, btn));
+      btns.appendChild(btn);
     }
   }
 
@@ -988,14 +1008,50 @@ async function downloadBook(fe, entry, btn) {
 
   const orig = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Downloading…';
+
+  function setProgress(pct, label) {
+    btn.innerHTML =
+      `<span class="dl-prog-wrap">` +
+      `<span class="dl-prog-bar" style="width:${pct}%"></span>` +
+      `<span class="dl-prog-label">${label}</span>` +
+      `</span>`;
+  }
+
   try {
     const keyBuf = CRYPTO.hexToBuffer(sourceKey);
+    setProgress(0, 'Connecting…');
     const res = await fetch(`${normaliseUrl(libUrl)}/${sourceFile}`);
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    const enc = await res.arrayBuffer();
-    btn.innerHTML = '<span class="spinner"></span> Decrypting…';
-    const plain = await CRYPTO.decryptWithKey(enc, keyBuf);
+
+    const contentLength = parseInt(res.headers.get('Content-Length') || '0', 10);
+    const hasLength = contentLength > 0;
+
+    const reader = res.body.getReader();
+    const chunks = [];
+    let received = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+      if (hasLength) {
+        // Reserve last 10% for decrypt phase
+        const pct = Math.round((received / contentLength) * 88);
+        setProgress(pct,
+          `${CRYPTO.formatBytes(received)} / ${CRYPTO.formatBytes(contentLength)}`);
+      } else {
+        setProgress(15, `Downloading ${CRYPTO.formatBytes(received)}…`);
+      }
+    }
+
+    // Reassemble into single buffer
+    const encBuf = new Uint8Array(received);
+    let off = 0;
+    for (const chunk of chunks) { encBuf.set(chunk, off); off += chunk.length; }
+
+    setProgress(90, 'Decrypting…');
+    const plain = await CRYPTO.decryptWithKey(encBuf.buffer, keyBuf);
+    setProgress(100, 'Done!');
     const mimeMap = { epub:'application/epub+zip', mobi:'application/x-mobipocket-ebook',
       pdf:'application/pdf', azw3:'application/x-mobipocket-ebook' };
     const mime = mimeMap[format] || 'application/octet-stream';

@@ -314,6 +314,14 @@
       border:2px solid rgba(128,128,128,.35);border-top-color:currentColor;
       border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
     @keyframes spin{to{transform:rotate(360deg)}}
+    .dl-prog-wrap{position:relative;display:inline-flex;align-items:center;
+      min-width:170px;height:1.15em;background:rgba(0,0,0,.18);
+      border-radius:4px;overflow:hidden}
+    .dl-prog-bar{position:absolute;left:0;top:0;height:100%;
+      background:rgba(255,255,255,.32);border-radius:4px;
+      transition:width .12s linear}
+    .dl-prog-label{position:relative;z-index:1;font-size:.8rem;
+      white-space:nowrap;padding:0 8px;letter-spacing:.01em}
     .hint{font-size:.77rem;color:var(--muted);margin-top:6px}
 
     /* ── Scrollbar ── */
