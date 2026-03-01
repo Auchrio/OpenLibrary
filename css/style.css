@@ -58,6 +58,24 @@
       --status-error-bg:rgba(200,0,0,.07);--status-error-border:rgba(200,0,0,.2);
       --status-error-text:#c62828;
     }
+    /* ── Sepia theme ── */
+    html[data-theme='sepia']{
+      --bg:#f3ead3;--bg2:#faf4e4;--surface:#ede3c8;--surface-raised:#faf4e4;
+      --border:rgba(100,70,30,.15);--border-strong:rgba(100,70,30,.28);
+      --text:#3b2a1a;--muted:#7a6040;
+      --input-bg:rgba(100,70,30,.06);--card-bg:rgba(100,70,30,.04);
+      --header-bg:rgba(243,234,211,.92);--modal-bg:#faf4e4;
+      --btn-primary-bg:#4a3320;--btn-primary-text:#faf4e4;
+      --btn-secondary-bg:rgba(100,70,30,.07);--btn-secondary-border:rgba(100,70,30,.15);
+      --cover-ph:#dfd5be;--cover-ph-text:rgba(60,40,10,.2);
+      --series-color:#7a6040;--tag-bg:rgba(100,70,30,.07);--tag-border:rgba(100,70,30,.14);
+      --scrollbar:rgba(100,70,30,.25);--shadow:rgba(80,50,10,.18);
+      --logo-from:#6b4c24;--logo-to:#3b2a1a;
+      --status-info-bg:rgba(90,130,80,.1);--status-info-border:rgba(90,130,80,.25);
+      --status-info-text:#4a7c40;
+      --status-error-bg:rgba(180,60,10,.1);--status-error-border:rgba(180,60,10,.25);
+      --status-error-text:#b83c0a;
+    }
 
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
       background:var(--bg);color:var(--text);min-height:100vh;

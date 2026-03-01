@@ -6,6 +6,10 @@
   <title>OpenLibrary Reader</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
   <script>(function(){try{var t=localStorage.getItem('ol-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t;}catch(e){}}());</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@100..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
   <link rel="stylesheet" href="css/reader.css">
 </head>
 <body>
@@ -34,21 +38,31 @@
     </div>
   </div>
   <div class="settings-row">
-    <span class="settings-label">Font size</span>
-    <div class="btn-group">
-      <button class="seg-btn" data-size="small">A</button>
-      <button class="seg-btn active" data-size="medium">A</button>
-      <button class="seg-btn" data-size="large">A</button>
-      <button class="seg-btn" data-size="xlarge">A</button>
+    <span class="settings-label">Size</span>
+    <div class="size-slider-row">
+      <input type="range" class="size-slider" id="fontSizeSlider" min="10" max="36" step="1" value="18">
+      <input type="number" class="size-input" id="fontSizeInput" min="10" max="36" value="18">
     </div>
   </div>
   <div class="settings-row">
     <span class="settings-label">Font</span>
     <div class="btn-group">
       <button class="seg-btn active" data-font="serif">Serif</button>
-      <button class="seg-btn" data-font="sans">Sans</button>
-      <button class="seg-btn" data-font="mono">Mono</button>
+      <button class="seg-btn" data-font="lexend">Lexend</button>
+      <button class="seg-btn" data-font="opendyslexic">Dyslexic</button>
+      <button class="seg-btn" data-font="custom">Custom…</button>
     </div>
+  </div>
+</div>
+
+<!-- ── Custom font popup ── -->
+<div class="custom-font-popup" id="customFontPopup">
+  <div class="custom-font-title">Custom font</div>
+  <p class="custom-font-hint">CSS font-family value, e.g. <code>"Atkinson Hyperlegible"</code> or <code>Arial, sans-serif</code></p>
+  <input class="custom-font-input" id="customFontInput" type="text" placeholder="Font name or CSS font stack">
+  <div class="custom-font-actions">
+    <button class="seg-btn" id="customFontCancel">Cancel</button>
+    <button class="seg-btn active" id="customFontApply">Apply</button>
   </div>
 </div>
 

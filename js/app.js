@@ -840,7 +840,7 @@ function esc(s) {
 // Theme management
 // ═══════════════════════════════════════════════════════════════
 function applyTheme(val) {
-  if (val === 'light' || val === 'dark') {
+  if (val === 'light' || val === 'dark' || val === 'sepia') {
     document.documentElement.dataset.theme = val;
   } else {
     delete document.documentElement.dataset.theme;

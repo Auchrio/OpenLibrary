@@ -360,13 +360,14 @@ function rewriteChapterHtml(raw, chapterPath, blobUrls, readerSettings) {
   return html;
 }
 
-function buildOverrideStyle({ theme, size, font }) {
-  const sizes = { small: '15px', medium: '18px', large: '21px', xlarge: '25px' };
+function buildOverrideStyle({ theme, size, font, customFont }) {
+  const px = (parseInt(size, 10) || 18) + 'px';
   const fonts = {
-    serif: "Georgia,'Times New Roman',Times,serif",
-    sans:  "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
-    mono:  "ui-monospace,'Cascadia Code',monospace"
+    serif:        "Georgia,'Times New Roman',Times,serif",
+    lexend:       "'Lexend Deca',sans-serif",
+    opendyslexic: "'OpenDyslexic',sans-serif",
   };
+  const resolvedFont = font === 'custom' ? (customFont || "Georgia,'Times New Roman',Times,serif") : (fonts[font] || fonts.serif);
   const themes = {
     dark:  { bg: '#181818', text: '#e0e0e0', link: '#90caf9' },
     light: { bg: '#f8f8f8', text: '#1a1a1a', link: '#1565c0' },
@@ -389,8 +390,8 @@ function buildOverrideStyle({ theme, size, font }) {
     max-width:700px !important;
     margin:0 auto !important;
     padding:24px 20px 40px !important;
-    font-family:${fonts[font] || fonts.serif} !important;
-    font-size:${sizes[size] || '18px'} !important;
+    font-family:${resolvedFont} !important;
+    font-size:${px} !important;
     line-height:1.75 !important;
     ${bgLine}
     ${textLine}
@@ -412,11 +413,18 @@ const state = {
   spine:       [],     // [{idref, href, mediaType}]
   toc:         [],     // flat array of toc items
   chapter:     0,      // current spine index
-  settings: {
-    theme:  localStorage.getItem('ol-theme')      || 'auto',
-    size:   localStorage.getItem('ol-reader-size') || 'medium',
-    font:   localStorage.getItem('ol-reader-font') || 'serif',
-  }
+  settings: (() => {
+    const rawSize = localStorage.getItem('ol-reader-size') || '';
+    // Migrate named sizes → px numbers
+    const sizeMap = { small: '15', medium: '18', large: '21', xlarge: '25' };
+    const size = sizeMap[rawSize] || (rawSize && /^\d+$/.test(rawSize) ? rawSize : '18');
+    return {
+      theme:      localStorage.getItem('ol-theme')           || 'auto',
+      size,
+      font:       localStorage.getItem('ol-reader-font')     || 'serif',
+      customFont: localStorage.getItem('ol-reader-customfont') || '',
+    };
+  })(),
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -652,22 +660,31 @@ function applySettings() {
   // Theme: reuse the html[data-theme] system
   if (theme === 'auto') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = theme;
-  document.documentElement.dataset.size = size;
   document.documentElement.dataset.font = font;
 
-  // Sync seg-btn active states
+  // Sync theme seg-btn active states
   document.querySelectorAll('[data-theme]').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
-  document.querySelectorAll('[data-size]').forEach(b  => b.classList.toggle('active', b.dataset.size  === size));
-  document.querySelectorAll('[data-font]').forEach(b  => b.classList.toggle('active', b.dataset.font  === font));
+
+  // Sync font seg-btn active states (mark 'custom' active when a custom font is set)
+  const activeFont = font === 'custom' ? 'custom' : font;
+  document.querySelectorAll('[data-font]').forEach(b => b.classList.toggle('active', b.dataset.font === activeFont));
+
+  // Sync size slider + number input
+  const px = parseInt(size, 10) || 18;
+  const slider = document.getElementById('fontSizeSlider');
+  const numInput = document.getElementById('fontSizeInput');
+  if (slider)   slider.value   = px;
+  if (numInput) numInput.value = px;
 
   // If a chapter is already loaded, re-render it to apply new overrides
   if (state.spine.length && state.files) goToChapter(state.chapter, null);
 }
 
 function saveSettings() {
-  localStorage.setItem('ol-theme',       state.settings.theme);
-  localStorage.setItem('ol-reader-size', state.settings.size);
-  localStorage.setItem('ol-reader-font', state.settings.font);
+  localStorage.setItem('ol-theme',            state.settings.theme);
+  localStorage.setItem('ol-reader-size',       state.settings.size);
+  localStorage.setItem('ol-reader-font',       state.settings.font);
+  localStorage.setItem('ol-reader-customfont', state.settings.customFont || '');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -831,14 +848,51 @@ document.querySelectorAll('[data-theme]').forEach(btn => {
     saveSettings(); applySettings();
   });
 });
-document.querySelectorAll('[data-size]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    state.settings.size = btn.dataset.size;
+// Font size slider
+const _slider   = document.getElementById('fontSizeSlider');
+const _numInput = document.getElementById('fontSizeInput');
+if (_slider) {
+  _slider.addEventListener('input', () => {
+    state.settings.size = _slider.value;
+    if (_numInput) _numInput.value = _slider.value;
     saveSettings(); applySettings();
   });
+}
+if (_numInput) {
+  _numInput.addEventListener('change', () => {
+    const v = Math.max(10, Math.min(36, parseInt(_numInput.value, 10) || 18));
+    _numInput.value = v;
+    state.settings.size = String(v);
+    if (_slider) _slider.value = v;
+    saveSettings(); applySettings();
+  });
+}
+
+// Font buttons (with custom popup support)
+function openCustomFontPopup() {
+  const popup = document.getElementById('customFontPopup');
+  const input = document.getElementById('customFontInput');
+  if (input) input.value = state.settings.customFont || '';
+  if (popup) popup.classList.add('open');
+}
+function closeCustomFontPopup() {
+  const popup = document.getElementById('customFontPopup');
+  if (popup) popup.classList.remove('open');
+}
+document.getElementById('customFontCancel')?.addEventListener('click', closeCustomFontPopup);
+document.getElementById('customFontApply')?.addEventListener('click', () => {
+  const val = (document.getElementById('customFontInput')?.value || '').trim();
+  state.settings.customFont = val;
+  state.settings.font = 'custom';
+  saveSettings(); applySettings();
+  closeCustomFontPopup();
 });
 document.querySelectorAll('[data-font]').forEach(btn => {
   btn.addEventListener('click', () => {
+    if (btn.dataset.font === 'custom') {
+      openCustomFontPopup();
+      return;
+    }
     state.settings.font = btn.dataset.font;
     saveSettings(); applySettings();
   });
