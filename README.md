@@ -238,14 +238,18 @@ Maintainers reserve the right to decline or remove any listing at their discreti
 
 ## Running Locally
 
-A simple Python dev server is all you need:
+Use the included `serve.py` script — it is identical to Python's built-in HTTP server but adds the `Access-Control-Allow-Origin: *` header that browsers require for cross-origin `fetch()` calls:
 
 ```sh
-python3 -m http.server 8080
+python3 serve.py          # serves on http://localhost:8080
+python3 serve.py 9000     # optional: choose a different port
 ```
 
 Open http://localhost:8080 in your browser.  
 To test with a real library, add `http://localhost:8080/test` as a source (requires having run the CLI against the included test books first).
+
+> **Why not `python3 -m http.server`?**  
+> Python's built-in server does not send CORS headers. The browser will block every `fetch()` to a different origin (including `localhost` when the page is opened from a different port or from `file://`) with a *"CORS header 'Access-Control-Allow-Origin' missing"* error.
 
 ---
 
@@ -271,6 +275,7 @@ OpenLibrary/
 ├── js/
 │   └── app.js            ← All application logic (crypto, rendering, state, …)
 ├── build_combined.sh     ← Builds index_combined.html (portable single-file)
+├── serve.py              ← CORS-enabled local dev server (replaces python3 -m http.server)
 ├── library.go            ← Go CLI for building encrypted libraries
 ├── go.mod                ← Go module (golang.org/x/crypto)
 ├── test/                 ← Example library generated from test EPUB files

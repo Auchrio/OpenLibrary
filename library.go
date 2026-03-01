@@ -359,53 +359,53 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Scan input, group by normalised title (merges multi-format books)
-	groups := map[string]*BookGroup{}
+	// ── Phase 1: collect EPUB files first, keyed by lowercase filename stem.
+	// Derivative formats (mobi, azw3, pdf) are only accepted when a matching
+	// EPUB stem exists, so we do two passes.
+	groups := map[string]*BookGroup{} // stem → group
+
+	// Supported derivative formats (require a paired EPUB).
+	derivativeExts := map[string]bool{
+		".mobi": true,
+		".azw3": true,
+		".pdf":  true,
+	}
+
+	// Collect paths by stem for the second pass.
+	type pendingFile struct {
+		path   string
+		format string
+	}
+	derivatives := []pendingFile{}
 
 	err := filepath.WalkDir(inputDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
 		ext := strings.ToLower(filepath.Ext(path))
-		if ext != ".epub" && ext != ".mobi" {
-			return nil
-		}
-		format := ext[1:]
+		stem := strings.ToLower(strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)))
 
-		var meta *BookMeta
 		if ext == ".epub" {
-			m, err := parseEPUB(path)
+			meta, err := parseEPUB(path)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Warning: skipping %s: %v\n", filepath.Base(path), err)
 				return nil
 			}
-			meta = m
-		} else {
-			// MOBI: derive title/author from filename
-			base := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
-			parts := strings.SplitN(base, " - ", 2)
-			meta = &BookMeta{Title: strings.TrimSpace(parts[0])}
-			if len(parts) == 2 {
-				meta.Author = strings.TrimSpace(parts[1])
+			if _, ok := groups[stem]; !ok {
+				groups[stem] = &BookGroup{
+					Meta:        *meta,
+					FormatFiles: map[string]string{},
+					FileSizes:   map[string]int64{},
+				}
 			}
-		}
-
-		groupKey := strings.ToLower(strings.TrimSpace(meta.Title))
-		if _, ok := groups[groupKey]; !ok {
-			groups[groupKey] = &BookGroup{
-				Meta:        *meta,
-				FormatFiles: map[string]string{},
-				FileSizes:   map[string]int64{},
+			g := groups[stem]
+			g.Meta = *meta // always use EPUB for metadata & cover
+			g.FormatFiles["epub"] = path
+			if info, err := os.Stat(path); err == nil {
+				g.FileSizes["epub"] = info.Size()
 			}
-		}
-		g := groups[groupKey]
-		g.FormatFiles[format] = path
-		if info, err := os.Stat(path); err == nil {
-			g.FileSizes[format] = info.Size()
-		}
-		// Prefer EPUB metadata (richer: cover, series)
-		if format == "epub" {
-			g.Meta = *meta
+		} else if derivativeExts[ext] {
+			derivatives = append(derivatives, pendingFile{path: path, format: ext[1:]})
 		}
 		return nil
 	})
@@ -413,8 +413,24 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Scan error: %v\n", err)
 		os.Exit(1)
 	}
+
+	// ── Phase 2: attach derivative formats to their paired EPUB group.
+	// Files with no matching EPUB stem are silently ignored.
+	for _, pf := range derivatives {
+		stem := strings.ToLower(strings.TrimSuffix(filepath.Base(pf.path), filepath.Ext(pf.path)))
+		g, ok := groups[stem]
+		if !ok {
+			fmt.Fprintf(os.Stderr, "Info: skipping %s — no matching .epub with the same filename\n", filepath.Base(pf.path))
+			continue
+		}
+		g.FormatFiles[pf.format] = pf.path
+		if info, err := os.Stat(pf.path); err == nil {
+			g.FileSizes[pf.format] = info.Size()
+		}
+	}
+
 	if len(groups) == 0 {
-		fmt.Println("No books (.epub/.mobi) found in input directory.")
+		fmt.Println("No EPUB books found in input directory.")
 		return
 	}
 
