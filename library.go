@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -11,6 +12,9 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
 	"io"
 	"io/fs"
 	"os"
@@ -19,6 +23,7 @@ import (
 	"strings"
 
 	"golang.org/x/crypto/pbkdf2"
+	"golang.org/x/image/draw"
 )
 
 // Crypto constants matching the JS CRYPTO module exactly.
@@ -87,6 +92,59 @@ func encryptWithKey(plaintext []byte, key []byte) ([]byte, error) {
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 }
 
+// compressCover resizes a cover image to at most maxDim pixels on its longest
+// edge, then re-encodes it as JPEG at the given quality.
+// If anything fails the original bytes are returned unchanged.
+func compressCover(data []byte, mimeType string, maxDim, quality int) []byte {
+	var src image.Image
+	var err error
+	if strings.Contains(mimeType, "png") {
+		src, err = png.Decode(bytes.NewReader(data))
+	} else {
+		src, err = jpeg.Decode(bytes.NewReader(data))
+	}
+	if err != nil {
+		return data
+	}
+
+	bounds := src.Bounds()
+	w, h := bounds.Dx(), bounds.Dy()
+	if w <= maxDim && h <= maxDim {
+		// Already small enough — still re-encode to JPEG to normalise format/quality.
+		var out bytes.Buffer
+		if err := jpeg.Encode(&out, src, &jpeg.Options{Quality: quality}); err != nil {
+			return data
+		}
+		return out.Bytes()
+	}
+
+	// Scale proportionally so the longest edge == maxDim.
+	var nw, nh int
+	if w >= h {
+		nw = maxDim
+		nh = int(float64(h) * float64(maxDim) / float64(w))
+	} else {
+		nh = maxDim
+		nw = int(float64(w) * float64(maxDim) / float64(h))
+	}
+	if nw < 1 {
+		nw = 1
+	}
+	if nh < 1 {
+		nh = 1
+	}
+
+	dst := image.NewRGBA(image.Rect(0, 0, nw, nh))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), src, bounds, draw.Over, nil)
+
+	var out bytes.Buffer
+	if err := jpeg.Encode(&out, dst, &jpeg.Options{Quality: quality}); err != nil {
+		return data
+	}
+	return out.Bytes()
+}
+
+// generateID returns a random UUID v4.
 func generateID() string {
 	b := make([]byte, 16)
 	rand.Read(b)
@@ -534,9 +592,10 @@ func main() {
 			Formats:     formats,
 		}
 
-		// Encrypt cover
+		// Compress and encrypt cover
 		if len(g.Meta.CoverBytes) > 0 {
-			if encCover, err := encryptWithKey(g.Meta.CoverBytes, fileKey); err == nil {
+			compressed := compressCover(g.Meta.CoverBytes, g.Meta.CoverType, 300, 75)
+			if encCover, err := encryptWithKey(compressed, fileKey); err == nil {
 				coverFile := id + "-cover.enc"
 				if os.WriteFile(filepath.Join(outputDir, coverFile), encCover, 0644) == nil {
 					entry.SourceCover = coverFile

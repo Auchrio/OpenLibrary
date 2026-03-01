@@ -371,13 +371,16 @@ function buildOverrideStyle({ theme, size, font }) {
     dark:  { bg: '#181818', text: '#e0e0e0', link: '#90caf9' },
     light: { bg: '#f8f8f8', text: '#1a1a1a', link: '#1565c0' },
     sepia: { bg: '#f7f0dc', text: '#3b2a1a', link: '#6b4c24' },
-    auto:  null
   };
-  const t = themes[theme] || themes.auto;
-  const bgLine   = t ? `background:${t.bg} !important;` : '';
-  const textLine = t ? `color:${t.text} !important;` : '';
-  const allTextLine = t ? `*,*::before,*::after{color:${t.text} !important;}` : '';
-  const linkLine = t ? `a,a *{color:${t.link}!important;}` : '';
+  // Resolve 'auto' by reading the system preference at render time.
+  const resolvedTheme = theme === 'auto'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : theme;
+  const t = themes[resolvedTheme] || themes.light;
+  const bgLine      = `background:${t.bg} !important;`;
+  const textLine    = `color:${t.text} !important;`;
+  const allTextLine = `*,*::before,*::after{color:${t.text} !important;}`;
+  const linkLine    = `a,a *{color:${t.link}!important;}`;
 
   return `
 <style id="ol-reader-overrides">
@@ -881,5 +884,10 @@ window.addEventListener('drop', e => {
 
 // On wide screens open TOC by default
 if (window.innerWidth >= 900) openToc();
+
+// Re-render when OS dark/light preference changes, but only when 'auto' is active.
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (state.settings.theme === 'auto') applySettings();
+});
 
 init();
