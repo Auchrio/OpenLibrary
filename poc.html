@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>EPUB Cover POC</title>
+  <style>
+    body { font-family: system-ui, Arial; padding: 18px; }
+    img { max-width: 240px; display:block; margin-top:10px }
+    pre { background:#f5f5f5; padding:8px; overflow:auto }
+  </style>
+</head>
+<body>
+  <h3>EPUB Cover extractor (single-file, no external libs)</h3>
+  <input id="file" type="file" accept="application/epub+zip, .epub">
+  <div id="status"></div>
+  <img id="cover" alt="cover image">
+  <pre id="debug" style="display:none"></pre>
+
+  <script>
+  // Minimal ZIP reader + deflate decompression via DecompressionStream (if available).
+  const $ = id => document.getElementById(id);
+  function log(s){ $('status').textContent = s }
+
+  function findEOCD(buf){
+    const sig = 0x06054b50;
+    const dv = new DataView(buf);
+    const len = buf.byteLength;
+    const maxComment = 0xffff; // 65535
+    const start = Math.max(0, len - (maxComment + 22));
+    for(let i = len - 22; i >= start; --i){
+      if(dv.getUint32(i, true) === sig) return i;
+    }
+    return -1;
+  }
+
+  function readCentralDirectory(buf){
+    const dv = new DataView(buf);
+    const eocdPos = findEOCD(buf);
+    if(eocdPos < 0) throw new Error('EOCD not found');
+    const cdSize = dv.getUint32(eocdPos + 12, true);
+    const cdOffset = dv.getUint32(eocdPos + 16, true);
+    const entries = [];
+    let p = cdOffset;
+    while(true){
+      const sig = dv.getUint32(p, true);
+      if(sig !== 0x02014b50) break;
+      const compMethod = dv.getUint16(p+10, true);
+      const compSize = dv.getUint32(p+20, true);
+      const uncompSize = dv.getUint32(p+24, true);
+      const nameLen = dv.getUint16(p+28, true);
+      const extraLen = dv.getUint16(p+30, true);
+      const commentLen = dv.getUint16(p+32, true);
+      const localHeaderOffset = dv.getUint32(p+42, true);
+      const nameStart = p + 46;
+      const nameBytes = new Uint8Array(buf, nameStart, nameLen);
+      const fileName = new TextDecoder().decode(nameBytes);
+      entries.push({ fileName, compMethod, compSize, uncompSize, localHeaderOffset });
+      p = nameStart + nameLen + extraLen + commentLen;
+    }
+    return entries;
+  }
+
+  function getLocalHeaderLengths(buf, offset){
+    const dv = new DataView(buf);
+    const sig = dv.getUint32(offset, true);
+    if(sig !== 0x04034b50) throw new Error('Local header signature not found at '+offset);
+    const nameLen = dv.getUint16(offset+26, true);
+    const extraLen = dv.getUint16(offset+28, true);
+    return { nameLen, extraLen };
+  }
+
+  async function getFileBytes(buf, entry){
+    const { localHeaderOffset, compSize, compMethod } = entry;
+    const { nameLen, extraLen } = getLocalHeaderLengths(buf, localHeaderOffset);
+    const dataStart = localHeaderOffset + 30 + nameLen + extraLen;
+    const compSlice = buf.slice(dataStart, dataStart + compSize);
+    if(compMethod === 0){
+      return new Uint8Array(compSlice);
+    }
+    if(compMethod === 8){
+      if(typeof DecompressionStream === 'undefined'){
+        throw new Error('Deflate compressed data found but DecompressionStream not available in this browser');
+      }
+      // Use deflate-raw (zip uses raw deflate)
+      const ds = new DecompressionStream('deflate-raw');
+      const inBlob = new Blob([compSlice]);
+      const outStream = inBlob.stream().pipeThrough(ds);
+      const res = await new Response(outStream).arrayBuffer();
+      return new Uint8Array(res);
+    }
+    throw new Error('Unsupported compression method: '+compMethod);
+  }
+
+  function textFromBytes(u8){ return new TextDecoder().decode(u8) }
+
+  async function extractCoverFromEpub(arrayBuffer){
+    const entries = readCentralDirectory(arrayBuffer);
+    function lookup(name){
+      const e = entries.find(x => x.fileName === name);
+      return e || null;
+    }
+    const containerEntry = entries.find(e => e.fileName === 'META-INF/container.xml');
+    if(!containerEntry) throw new Error('META-INF/container.xml not found');
+    const containerBytes = await getFileBytes(arrayBuffer, containerEntry);
+    const containerXml = textFromBytes(containerBytes);
+    const parser = new DOMParser();
+    const cdoc = parser.parseFromString(containerXml, 'application/xml');
+    const rootfileEl = cdoc.querySelector('rootfile');
+    if(!rootfileEl) throw new Error('rootfile not found in container.xml');
+    const opfPath = rootfileEl.getAttribute('full-path');
+    if(!opfPath) throw new Error('OPF path missing');
+    const opfEntry = entries.find(e => e.fileName === opfPath);
+    if(!opfEntry) throw new Error('OPF file not found: '+opfPath);
+    const opfBytes = await getFileBytes(arrayBuffer, opfEntry);
+    const opfXml = textFromBytes(opfBytes);
+    const opfDoc = parser.parseFromString(opfXml, 'application/xml');
+
+    // Try EPUB2 meta name="cover"
+    let coverId = opfDoc.querySelector('metadata meta[name="cover"]')?.getAttribute('content');
+    if(!coverId){
+      // EPUB3: manifest item with properties="cover-image"
+      const item = Array.from(opfDoc.querySelectorAll('manifest item'))
+        .find(i => (i.getAttribute('properties')||'').includes('cover-image'));
+      coverId = item?.getAttribute('id');
+    }
+    if(!coverId){
+      // fallback: look for manifest items with 'cover' in id or href
+      const fallback = Array.from(opfDoc.querySelectorAll('manifest item'))
+        .find(i => (i.getAttribute('id')||'').toLowerCase().includes('cover') || (i.getAttribute('href')||'').toLowerCase().includes('cover'));
+      coverId = fallback?.getAttribute('id');
+    }
+    if(!coverId) throw new Error('Cover id not found in OPF');
+    const coverItem = opfDoc.querySelector(`manifest item[id="${coverId}"]`);
+    if(!coverItem) throw new Error('Cover manifest item not found');
+    const href = coverItem.getAttribute('href');
+    if(!href) throw new Error('Cover href missing');
+    const base = opfPath.replace(/[^/]*$/, '');
+    const coverPath = base + href;
+    const coverEntry = entries.find(e => e.fileName === coverPath);
+    if(!coverEntry) throw new Error('Cover file not found in ZIP: '+coverPath);
+    const coverBytes = await getFileBytes(arrayBuffer, coverEntry);
+    return { bytes: coverBytes, name: coverEntry.fileName };
+  }
+
+  $('file').addEventListener('change', async (ev) => {
+    const f = ev.target.files && ev.target.files[0];
+    if(!f) return;
+    log('Reading file...');
+    try{
+      const ab = await f.arrayBuffer();
+      log('Parsing ZIP...');
+      const res = await extractCoverFromEpub(ab);
+      log('Cover extracted: '+res.name);
+      const mime = res.name.toLowerCase().endsWith('.png') ? 'image/png' : (res.name.match(/\.jpe?g$/i) ? 'image/jpeg' : (res.name.endsWith('.svg') ? 'image/svg+xml' : 'application/octet-stream'));
+      const blob = new Blob([res.bytes], { type: mime });
+      $('cover').src = URL.createObjectURL(blob);
+    }catch(err){
+      log('Error: '+err.message);
+      $('debug').style.display = 'block';
+      $('debug').textContent = err.stack || String(err);
+    }
+  });
+  </script>
+</body>
+</html>

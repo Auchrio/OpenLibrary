@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenLibrary</title>
+  <!-- Apply saved theme before first paint to prevent flash -->
+  <script>(function(){try{var t=localStorage.getItem('ol-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t;}catch(e){}}());</script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div class="logo-group">
+      <span class="logo-icon">📚</span>
+      <h1>OpenLibrary</h1>
+    </div>
+    <div class="header-actions">
+      <select class="theme-select" id="themeSelect" title="Theme">
+        <option value="auto">🌗 Auto</option>
+        <option value="light">☀️ Light</option>
+        <option value="dark">🌙 Dark</option>
+      </select>
+      <button class="btn-sources" id="btnSources">
+        <span id="srcBtnLabel">📚 Sources</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="toolbar" id="toolbar" style="display:none">
+    <div class="search-wrap">
+      <input id="searchInput" placeholder="Search title, author, series…" autocomplete="off">
+    </div>
+    <select id="sortSelect">
+      <option value="series">Sort: Series Order</option>
+      <option value="title">Title A–Z</option>
+      <option value="author">Author A–Z</option>
+      <option value="title_desc">Title Z–A</option>
+    </select>
+    <span class="book-count" id="bookCount"></span>
+  </div>
+
+  <div class="status-banner" id="statusBanner"></div>
+
+  <div class="book-grid" id="bookGrid"></div>
+  <div class="pagination" id="pagination"></div>
+
+  <div class="empty-state show" id="emptyState">
+    <div class="empty-icon">📖</div>
+    <div class="empty-title">No library sources loaded</div>
+    <div class="empty-sub">Click <strong>+ Add Source</strong> and enter a library URL to get started.</div>
+  </div>
+</main>
+
+<!-- ── Book detail modal ── -->
+<div class="overlay" id="bookOverlay">
+  <div class="modal-box book-modal-box">
+    <button class="bm-close" id="bmClose">✕</button>
+    <div class="bm-inner">
+      <div class="bm-cover" id="bmCover">
+        <div class="bm-cover-ph" id="bmCoverPh">?</div>
+      </div>
+      <div class="bm-meta">
+        <div class="bm-source-tag" id="bmSource"></div>
+        <div class="bm-title" id="bmTitle"></div>
+        <div class="bm-author" id="bmAuthor"></div>
+        <div class="meta-row" id="bmSeriesRow" style="display:none">
+          <span class="meta-label">Series</span>
+          <span class="meta-value" id="bmSeries"></span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Formats</span>
+          <span class="meta-value" id="bmFormats"></span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">File size</span>
+          <span class="meta-value" id="bmSize"></span>
+        </div>
+        <div class="meta-row" id="bmIdRow">
+          <span class="meta-label">ID</span>
+          <span class="meta-value" id="bmId" style="font-size:.75rem;opacity:.45;word-break:break-all"></span>
+        </div>
+        <div class="bm-formats" id="bmDlButtons"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add-source dialog ── -->
+<div class="overlay" id="addOverlay">
+  <div class="modal-box dlg-box">
+    <div class="dlg-title">🔗 Add Library Source</div>
+    <label class="dlg-label">Library base URL</label>
+    <input class="dlg-input" id="addUrl" placeholder="https://raw.githubusercontent.com/user/repo/main  or  http://localhost:8080/test">
+    <p class="hint">The URL should point to the folder containing <strong>lib.json</strong>.</p>
+    <div class="error-msg" id="addError"></div>
+    <div class="preview-box" id="addPreview">
+      <div class="preview-name" id="prevName"></div>
+      <div class="preview-count" id="prevCount"></div>
+      <div id="linkedContainer" style="display:none">
+        <div style="margin-top:10px;font-size:.8rem;font-weight:600;color:var(--muted)">LINKED LIBRARIES</div>
+        <div class="linked-list" id="linkedList"></div>
+      </div>
+    </div>
+    <div class="dlg-actions">
+      <button class="btn-secondary" id="addCancel">Cancel</button>
+      <button class="btn-primary" id="addPreviewBtn">Preview</button>
+      <button class="btn-primary" id="addConfirmBtn" style="display:none">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Sources manager overlay ── -->
+<div class="overlay" id="sourcesOverlay">
+  <div class="modal-box sources-modal-box">
+    <div class="sources-modal-header">
+      <div class="sources-modal-title">📚 Library Sources</div>
+      <button class="bm-close" id="srcMgrClose">✕</button>
+    </div>
+    <div class="sources-modal-toolbar">
+      <button class="btn-secondary" id="srcExportBtn">⎘ Copy as JSON</button>
+      <button class="btn-secondary" id="srcImportBtn">↑ Import JSON</button>
+      <button class="btn-primary" id="btnAdd">+ Add New Source</button>
+    </div>
+    <div class="src-import-panel" id="srcImportPanel">
+      <label class="dlg-label">Paste a JSON array of source objects:</label>
+      <textarea class="dlg-input src-import-ta" id="srcImportTa"
+        placeholder='[{"url":"https://...","name":"My Library"}]'></textarea>
+      <div class="error-msg" id="srcImportError"></div>
+      <div class="dlg-actions">
+        <button class="btn-secondary" id="srcImportCancel">Cancel</button>
+        <button class="btn-primary" id="srcImportConfirm">Import</button>
+      </div>
+    </div>
+    <div id="srcList"></div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
