@@ -108,9 +108,16 @@ async function decryptIndex(lib, password) {
 
 async function loadLibrary(url) {
   url = normaliseUrl(url);
+  const src = state.sources.find(s => normaliseUrl(s.url) === url);
   const libJson = await fetchLib(url);
-  const password = libJson.encryption_type === 0 ? '0' : null;
-  if (password === null) throw new Error('Encryption type 1 requires a key (not yet supported in UI)');
+  let password;
+  if (libJson.encryption_type === 0) {
+    password = '0';
+  } else if (src?.password) {
+    password = src.password;
+  } else {
+    throw new Error('Library requires a password — remove and re-add the source to enter one.');
+  }
   const books = await decryptIndex(libJson, password);
   const bookMap = new Map(Object.entries(books));
   state.libs.set(url, {
@@ -625,10 +632,12 @@ function removeSource(url) {
   renderAll();
 }
 
-async function addSource(url, name) {
+async function addSource(url, name, password) {
   url = normaliseUrl(url);
   if (!state.sources.find(s => normaliseUrl(s.url) === url)) {
-    state.sources.push({ url, name: name || url });
+    const src = { url, name: name || url };
+    if (password != null) src.password = password;
+    state.sources.push(src);
     saveSources(state.sources);
     renderChips();
   }
@@ -680,11 +689,11 @@ async function previewLibrary() {
   document.getElementById('addError').classList.remove('show');
   try {
     const libJson = await fetchLib(url);
-    const password = libJson.encryption_type === 0 ? '0' : null;
-    let bookCount = 0;
-    if (password !== null) {
+    const encryptionType = libJson.encryption_type;
+    let bookCount = '?';
+    if (encryptionType === 0) {
       try {
-        const idx = await decryptIndex(libJson, password);
+        const idx = await decryptIndex(libJson, '0');
         bookCount = Object.keys(idx).length;
       } catch { bookCount = '?'; }
     }
@@ -693,8 +702,9 @@ async function previewLibrary() {
       .filter(([,v]) => v && (v.link||v.url));
 
     document.getElementById('prevName').textContent = libJson.name || url;
-    document.getElementById('prevCount').textContent =
-      `${bookCount} book${bookCount!==1?'s':''} · encryption_type ${libJson.encryption_type}`;
+    document.getElementById('prevCount').textContent = encryptionType !== 0
+      ? `🔐 Password required · type ${encryptionType}`
+      : `${bookCount} book${bookCount!==1?'s':''}  · type ${encryptionType}`;
 
     const lc = document.getElementById('linkedContainer');
     const ll = document.getElementById('linkedList');
@@ -721,7 +731,7 @@ async function previewLibrary() {
     document.getElementById('addPreview').classList.add('show');
     document.getElementById('addConfirmBtn').style.display = '';
     document.getElementById('addPreviewBtn').style.display = 'none';
-    _pendingLib = { url, name: libJson.name||url, links: linkEntries };
+    _pendingLib = { url, name: libJson.name||url, links: linkEntries, encryptionType, libJson };
   } catch(err) {
     showAddError('Could not load library: '+err.message);
   } finally {
@@ -732,8 +742,15 @@ async function previewLibrary() {
 
 async function confirmImport() {
   if (!_pendingLib) return;
+  // If the library needs a password, close the add dialog and open the key prompt.
+  // The key prompt handler is responsible for actually adding the source.
+  if (_pendingLib.encryptionType !== 0) {
+    closeAddDialog();
+    openKeyPrompt();
+    return;
+  }
   closeAddDialog();
-  // Add primary source
+  // Add primary source (no password needed)
   await addSource(_pendingLib.url, _pendingLib.name);
   // Add checked linked sources
   document.querySelectorAll('#linkedList input[type=checkbox]:checked:not(:disabled)').forEach(cb => {
@@ -741,6 +758,57 @@ async function confirmImport() {
     const name = cb.closest('.linked-item').querySelector('.linked-name').textContent;
     addSource(linkUrl, name);
   });
+}
+
+// ── Key prompt (for password-protected libraries) ──────────────────────────
+function openKeyPrompt() {
+  document.getElementById('keyDlgDesc').textContent =
+    `"${_pendingLib.name}" is password-protected. Enter the decryption password to unlock it.`;
+  document.getElementById('keyInput').value = '';
+  document.getElementById('keyError').classList.remove('show');
+  document.getElementById('keyOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('keyInput').focus(), 80);
+}
+
+function closeKeyPrompt() {
+  document.getElementById('keyOverlay').classList.remove('open');
+}
+
+async function tryUnlockKey() {
+  if (!_pendingLib) return;
+  const password = document.getElementById('keyInput').value;
+  if (!password) { showKeyError('Please enter a password.'); return; }
+
+  const btn = document.getElementById('keyUnlockBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Checking…';
+  document.getElementById('keyError').classList.remove('show');
+  try {
+    // Validate the password before touching state
+    const idx = await decryptIndex(_pendingLib.libJson, password);
+    const bookCount = Object.keys(idx).length;
+    // Password is good — now persist and load
+    closeKeyPrompt();
+    await addSource(_pendingLib.url, _pendingLib.name, password);
+    // Add any checked linked sources (they'll ask for their own key if needed)
+    document.querySelectorAll('#linkedList input[type=checkbox]:checked:not(:disabled)').forEach(cb => {
+      const linkUrl = cb.value;
+      const name = cb.closest('.linked-item').querySelector('.linked-name').textContent;
+      addSource(linkUrl, name);
+    });
+    showStatus(`"${_pendingLib.name}" unlocked — ${bookCount} book${bookCount!==1?'s':''} loaded.`, 'info');
+  } catch {
+    showKeyError('Incorrect password — decryption failed. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Unlock';
+  }
+}
+
+function showKeyError(msg) {
+  const el = document.getElementById('keyError');
+  el.textContent = msg;
+  el.classList.add('show');
 }
 
 function showAddError(msg) {
@@ -897,6 +965,13 @@ document.addEventListener('keydown', e => {
 // Enter key in URL field triggers preview
 document.getElementById('addUrl').addEventListener('keydown', e => {
   if (e.key==='Enter') previewLibrary();
+});
+
+// Key prompt overlay
+document.getElementById('keyCancel').addEventListener('click', closeKeyPrompt);
+document.getElementById('keyUnlockBtn').addEventListener('click', tryUnlockKey);
+document.getElementById('keyInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') tryUnlockKey();
 });
 
 document.getElementById('searchInput').addEventListener('input', e => {

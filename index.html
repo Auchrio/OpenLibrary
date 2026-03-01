@@ -110,6 +110,21 @@
   </div>
 </div>
 
+<!-- ── Key prompt dialog ── -->
+<div class="overlay" id="keyOverlay">
+  <div class="modal-box dlg-box">
+    <div class="dlg-title">🔐 Password Required</div>
+    <p id="keyDlgDesc" class="key-dlg-desc"></p>
+    <label class="dlg-label">Decryption password</label>
+    <input class="dlg-input" id="keyInput" type="password" placeholder="Enter the library password" autocomplete="off">
+    <div class="error-msg" id="keyError"></div>
+    <div class="dlg-actions">
+      <button class="btn-secondary" id="keyCancel">Cancel</button>
+      <button class="btn-primary" id="keyUnlockBtn">Unlock</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Sources manager overlay ── -->
 <div class="overlay" id="sourcesOverlay">
   <div class="modal-box sources-modal-box">

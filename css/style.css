@@ -322,6 +322,7 @@
       transition:width .12s linear}
     .dl-prog-label{position:relative;z-index:1;font-size:.8rem;
       white-space:nowrap;padding:0 8px;letter-spacing:.01em}
+    .key-dlg-desc{font-size:.88rem;color:var(--text);margin-bottom:14px;line-height:1.5}
     .hint{font-size:.77rem;color:var(--muted);margin-top:6px}
     .hint code{background:var(--tag-bg);border:1px solid var(--border);
       border-radius:4px;padding:1px 5px;font-size:.76rem;color:var(--text)}
