@@ -7,7 +7,10 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
   <!-- Apply saved theme before first paint to prevent flash -->
   <script>(function(){try{var t=localStorage.getItem('ol-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t;}catch(e){}}());</script>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/sources.css">
+  <link rel="stylesheet" href="css/modals.css">
 </head>
 <body>
 
@@ -92,8 +95,9 @@
   <div class="modal-box dlg-box">
     <div class="dlg-title">🔗 Add Library Source</div>
     <label class="dlg-label">Library base URL</label>
-    <input class="dlg-input" id="addUrl" placeholder="github:user/repo  or  https://raw.githubusercontent.com/user/repo/main  or  http://localhost:8080">
-    <p class="hint">Use <code>github:user/repo</code> as a shorthand, or paste the full URL to the folder containing <strong>lib.json</strong>.</p>
+    <input class="dlg-input" id="addUrl" placeholder="github:user/repo  ·  github:user/repo/subdir  ·  https://raw.githubusercontent.com/…">
+    <p class="hint">Use <code>github:user/repo</code> or <code>github:user/repo/subdir</code> as a shorthand, or paste the full URL to the folder containing <strong>lib.json</strong>.</p>
+    <p class="hint hint-tip">💡 New here? Add <a class="hint-fill-btn" href="#">github:Auchrio/OpenLibrary</a> to get started with a curated library index.</p>
     <div class="error-msg" id="addError"></div>
     <div class="preview-box" id="addPreview">
       <div class="preview-name" id="prevName"></div>
@@ -134,6 +138,7 @@
       <button class="bm-close" id="srcMgrClose">✕</button>
     </div>
     <div class="sources-modal-toolbar">
+      <button class="btn-secondary" id="srcRefreshBtn">🔄 Refresh</button>
       <button class="btn-secondary" id="srcExportBtn">⎘ Copy as JSON</button>
       <button class="btn-secondary" id="srcImportBtn">↑ Import JSON</button>
       <button class="btn-primary" id="btnAdd">+ Add New Source</button>
@@ -149,9 +154,25 @@
       </div>
     </div>
     <div id="srcList"></div>
+    <!-- Discovery panel: shown after refresh finds new linked libraries -->
+    <div class="src-discover-panel" id="srcDiscoverPanel">
+      <div class="src-panel-header">🔗 New Libraries Discovered</div>
+      <p class="src-discover-desc">These libraries were found via links in your current sources. Select which to add:</p>
+      <div class="linked-list" id="srcDiscoverList" style="padding:4px 16px 0"></div>
+      <div class="dlg-actions" style="padding:10px 16px 14px">
+        <button class="btn-secondary" id="srcDiscoverDismiss">Dismiss</button>
+        <button class="btn-primary" id="srcDiscoverAddBtn">Add Selected</button>
+      </div>
+    </div>
   </div>
 </div>
 
-<script src="js/app.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/state.js"></script>
+<script src="js/library.js"></script>
+<script src="js/render.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/sources.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>

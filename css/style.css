@@ -344,6 +344,12 @@
     .hint{font-size:.77rem;color:var(--muted);margin-top:6px}
     .hint code{background:var(--tag-bg);border:1px solid var(--border);
       border-radius:4px;padding:1px 5px;font-size:.76rem;color:var(--text)}
+    .hint-tip{margin-top:8px;padding:8px 10px;
+      background:var(--status-info-bg);border:1px solid var(--status-info-border);
+      border-radius:8px;color:var(--status-info-text)}
+    .hint-fill-btn{color:var(--status-info-text);font-weight:700;
+      text-decoration:underline;text-underline-offset:2px}
+    .hint-fill-btn:hover{opacity:.8}
 
     /* ── Scrollbar ── */
     ::-webkit-scrollbar{width:6px;height:6px}

@@ -1,0 +1,88 @@
+/* ── Reset ── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+/* ── Dark theme (default) ── */
+html{
+  --bg:#121212;--bg2:#1c1c1c;--surface:#242424;--surface-raised:#2e2e2e;
+  --border:rgba(255,255,255,.1);--border-strong:rgba(255,255,255,.2);
+  --text:#f2f2f2;--muted:#888888;
+  --input-bg:rgba(255,255,255,.06);--card-bg:rgba(255,255,255,.04);
+  --header-bg:rgba(18,18,18,.92);--modal-bg:#1c1c1c;
+  --btn-primary-bg:#efefef;--btn-primary-text:#111111;
+  --btn-secondary-bg:rgba(255,255,255,.07);--btn-secondary-border:rgba(255,255,255,.13);
+  --cover-ph:#2c2c2c;--cover-ph-text:rgba(255,255,255,.18);
+  --series-color:#b0b0b0;--tag-bg:rgba(255,255,255,.07);--tag-border:rgba(255,255,255,.12);
+  --scrollbar:rgba(255,255,255,.18);--shadow:rgba(0,0,0,.55);
+  --logo-from:#d0d0d0;--logo-to:#ffffff;
+  --status-info-bg:rgba(100,181,246,.1);--status-info-border:rgba(100,181,246,.25);
+  --status-info-text:#7ec8f8;
+  --status-error-bg:rgba(255,82,82,.1);--status-error-border:rgba(255,82,82,.25);
+  --status-error-text:#ff8a80;
+  --radius:10px;--transition:.18s ease;
+}
+
+/* ── Light theme — applied when system prefers light and no manual override ── */
+@media(prefers-color-scheme:light){
+  html:not([data-theme]){
+    --bg:#f0f0f0;--bg2:#ffffff;--surface:#e4e4e4;--surface-raised:#ffffff;
+    --border:rgba(0,0,0,.1);--border-strong:rgba(0,0,0,.2);
+    --text:#1a1a1a;--muted:#636363;
+    --input-bg:rgba(0,0,0,.04);--card-bg:rgba(0,0,0,.03);
+    --header-bg:rgba(240,240,240,.92);--modal-bg:#ffffff;
+    --btn-primary-bg:#1a1a1a;--btn-primary-text:#ffffff;
+    --btn-secondary-bg:rgba(0,0,0,.05);--btn-secondary-border:rgba(0,0,0,.12);
+    --cover-ph:#d4d4d4;--cover-ph-text:rgba(0,0,0,.2);
+    --series-color:#555555;--tag-bg:rgba(0,0,0,.05);--tag-border:rgba(0,0,0,.1);
+    --scrollbar:rgba(0,0,0,.2);--shadow:rgba(0,0,0,.12);
+    --logo-from:#333333;--logo-to:#000000;
+    --status-info-bg:rgba(30,120,190,.08);--status-info-border:rgba(30,120,190,.2);
+    --status-info-text:#1565c0;
+    --status-error-bg:rgba(200,0,0,.07);--status-error-border:rgba(200,0,0,.2);
+    --status-error-text:#c62828;
+  }
+}
+
+/* ── Manual light override ── */
+html[data-theme='light']{
+  --bg:#f0f0f0;--bg2:#ffffff;--surface:#e4e4e4;--surface-raised:#ffffff;
+  --border:rgba(0,0,0,.1);--border-strong:rgba(0,0,0,.2);
+  --text:#1a1a1a;--muted:#636363;
+  --input-bg:rgba(0,0,0,.04);--card-bg:rgba(0,0,0,.03);
+  --header-bg:rgba(240,240,240,.92);--modal-bg:#ffffff;
+  --btn-primary-bg:#1a1a1a;--btn-primary-text:#ffffff;
+  --btn-secondary-bg:rgba(0,0,0,.05);--btn-secondary-border:rgba(0,0,0,.12);
+  --cover-ph:#d4d4d4;--cover-ph-text:rgba(0,0,0,.2);
+  --series-color:#555555;--tag-bg:rgba(0,0,0,.05);--tag-border:rgba(0,0,0,.1);
+  --scrollbar:rgba(0,0,0,.2);--shadow:rgba(0,0,0,.12);
+  --logo-from:#333333;--logo-to:#000000;
+  --status-info-bg:rgba(30,120,190,.08);--status-info-border:rgba(30,120,190,.2);
+  --status-info-text:#1565c0;
+  --status-error-bg:rgba(200,0,0,.07);--status-error-border:rgba(200,0,0,.2);
+  --status-error-text:#c62828;
+}
+
+/* ── Sepia theme ── */
+html[data-theme='sepia']{
+  --bg:#f3ead3;--bg2:#faf4e4;--surface:#ede3c8;--surface-raised:#faf4e4;
+  --border:rgba(100,70,30,.15);--border-strong:rgba(100,70,30,.28);
+  --text:#3b2a1a;--muted:#7a6040;
+  --input-bg:rgba(100,70,30,.06);--card-bg:rgba(100,70,30,.04);
+  --header-bg:rgba(243,234,211,.92);--modal-bg:#faf4e4;
+  --btn-primary-bg:#4a3320;--btn-primary-text:#faf4e4;
+  --btn-secondary-bg:rgba(100,70,30,.07);--btn-secondary-border:rgba(100,70,30,.15);
+  --cover-ph:#dfd5be;--cover-ph-text:rgba(60,40,10,.2);
+  --series-color:#7a6040;--tag-bg:rgba(100,70,30,.07);--tag-border:rgba(100,70,30,.14);
+  --scrollbar:rgba(100,70,30,.25);--shadow:rgba(80,50,10,.18);
+  --logo-from:#6b4c24;--logo-to:#3b2a1a;
+  --status-info-bg:rgba(90,130,80,.1);--status-info-border:rgba(90,130,80,.25);
+  --status-info-text:#4a7c40;
+  --status-error-bg:rgba(180,60,10,.1);--status-error-border:rgba(180,60,10,.25);
+  --status-error-text:#b83c0a;
+}
+
+/* ── Base element styles ── */
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;
+  transition:background .22s ease,color .22s ease;}
+a{color:inherit}
+button{cursor:pointer;font-family:inherit}

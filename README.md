@@ -1,5 +1,7 @@
 # OpenLibrary
 
+### > **Want permanent access to this service?**: Simply clone this repository locally and open [index.html](./index.html) in your browser, no server needed!
+
 A decentralised, encrypted ebook library system with no authentication, no usage limits, and no single point of failure.  
 Books are served from ordinary file hosts (GitHub, any raw HTTP server). The web UI runs entirely in the browser — no backend, no tracking, no accounts.
 

@@ -45,23 +45,63 @@ const CRYPTO = {
 
 // ═══════════════════════════════════════════════════════════════
 // URL hash state  —  persists library source list client-side
+//
+// Hash format: pipe-separated raw source URLs, e.g.
+//   #github:owner/repo|https://example.com/lib
+// Names and passwords are stored in localStorage, keyed by raw URL.
+// Legacy base64-JSON hashes are transparently migrated on first load.
 // ═══════════════════════════════════════════════════════════════
-function b64enc(str) {
-  return btoa(unescape(encodeURIComponent(str)))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-}
 function b64dec(str) {
   str = str.replace(/-/g,'+').replace(/_/g,'/');
   while (str.length%4) str+='=';
   return decodeURIComponent(escape(atob(str)));
 }
+
+// ── Per-source metadata (name, password) stored in localStorage ──
+function _srcMetaKey(rawUrl) { return 'ol-src:' + rawUrl; }
+function _getMeta(rawUrl) {
+  try { return JSON.parse(localStorage.getItem(_srcMetaKey(rawUrl)) || 'null') || {}; } catch { return {}; }
+}
+function _setMeta(rawUrl, obj) {
+  try {
+    if (obj && (obj.name || obj.password))
+      localStorage.setItem(_srcMetaKey(rawUrl), JSON.stringify(obj));
+    else
+      localStorage.removeItem(_srcMetaKey(rawUrl));
+  } catch {}
+}
+function _delMeta(rawUrl) {
+  try { localStorage.removeItem(_srcMetaKey(rawUrl)); } catch {}
+}
+
 function loadSources() {
   const h = location.hash.slice(1);
   if (!h) return [];
-  try { return JSON.parse(b64dec(h)); } catch { return []; }
+  // ── Legacy: base64-JSON format (auto-migrate) ──
+  try {
+    const arr = JSON.parse(b64dec(h));
+    if (Array.isArray(arr)) {
+      // Persist in new readable format on next tick
+      setTimeout(() => saveSources(arr), 0);
+      return arr;
+    }
+  } catch {}
+  // ── New format: pipe-separated raw URLs ──
+  // A literal '|' inside a URL must be encoded as %7C
+  return h.split('|').filter(Boolean).map(seg => {
+    const rawUrl = seg.replace(/%7C/gi, '|');
+    const meta = _getMeta(rawUrl);
+    return { url: rawUrl, name: meta.name || rawUrl,
+             ...(meta.password ? { password: meta.password } : {}) };
+  });
 }
+
 function saveSources(arr) {
-  history.replaceState(null,'','#'+b64enc(JSON.stringify(arr)));
+  // Write human-readable pipe-separated raw URLs to the hash
+  const hash = arr.map(s => s.url.replace(/\|/g, '%7C')).join('|');
+  history.replaceState(null, '', '#' + hash);
+  // Persist names and passwords in localStorage
+  arr.forEach(s => _setMeta(s.url, { name: s.name, password: s.password }));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -76,7 +116,7 @@ const state = {
   books: [],           // all books flat
   filtered: [],        // after search+sort
   page: 1,
-  perPage: 20,
+  perPage: 4, // recalculated dynamically as getGridColumns() * 5
   search: '',
   sort: 'series',
   coverCache: new Map() // bookId → objectURL
@@ -110,24 +150,28 @@ async function loadLibrary(url) {
   url = normaliseUrl(url);
   const src = state.sources.find(s => normaliseUrl(s.url) === url);
   const libJson = await fetchLib(url);
-  let password;
-  if (libJson.encryption_type === 0) {
-    password = '0';
-  } else if (src?.password) {
-    password = src.password;
-  } else {
-    throw new Error('Library requires a password — remove and re-add the source to enter one.');
+  let bookMap = new Map();
+  // An index-less lib (links-only) has no `index` field — skip decryption entirely.
+  if (libJson.index) {
+    let password;
+    if (libJson.encryption_type === 0) {
+      password = '0';
+    } else if (src?.password) {
+      password = src.password;
+    } else {
+      throw new Error('Library requires a password — remove and re-add the source to enter one.');
+    }
+    const books = await decryptIndex(libJson, password);
+    bookMap = new Map(Object.entries(books));
   }
-  const books = await decryptIndex(libJson, password);
-  const bookMap = new Map(Object.entries(books));
   state.libs.set(url, {
     name: libJson.name || url,
     encryption_type: libJson.encryption_type,
-    links: libJson.links || {},
+    links: libJson.links || [],
     books: bookMap
   });
   rebuildBookList();
-  return { name: libJson.name, links: libJson.links || {}, bookCount: bookMap.size };
+  return { name: libJson.name, links: libJson.links || [], bookCount: bookMap.size };
 }
 
 // Build a flat array of per-format download descriptors for one raw book.
@@ -265,7 +309,11 @@ function renderChips() {
 
       let countHtml;
       if (lib) {
-        countHtml = `<span class="src-count-badge">${lib.books.size} book${lib.books.size!==1?'s':''}</span>`;
+        const bc = lib.books.size;
+        const lc = (lib.links || []).length;
+        const bPart = `<span class="src-count-badge">${bc} book${bc!==1?'s':''}</span>`;
+        const lPart = lc ? `<span class="src-count-badge">${lc} link${lc!==1?'s':''}</span>` : '';
+        countHtml = bPart + lPart;
       } else {
         countHtml = `<span class="src-count-loading">loading…</span>`;
       }
@@ -309,8 +357,28 @@ function renderChips() {
   });
 }
 
+// ─────────────────────────────────────────────────────────────
+// Returns the number of columns currently in the book grid,
+// derived from the CSS auto-fill layout (minmax(160px,1fr), gap 18px,
+// horizontal padding 48px total).
+function getGridColumns() {
+  const grid = document.getElementById('bookGrid');
+  if (!grid) return 4;
+  // Prefer the browser's resolved value when the grid has items
+  const tpl = getComputedStyle(grid).gridTemplateColumns;
+  if (tpl && tpl !== 'none' && /\d/.test(tpl)) {
+    const cols = tpl.trim().split(/\s+/).length;
+    if (cols > 0) return cols;
+  }
+  // Fallback: estimate from content width (24px padding each side, 18px gap, 160px min card)
+  const w = (grid.clientWidth || window.innerWidth) - 48;
+  return Math.max(1, Math.floor((w + 18) / (160 + 18)));
+}
+
 function renderGrid() {
   const grid = document.getElementById('bookGrid');
+  // Update perPage to always show 5 rows at the current column count
+  state.perPage = getGridColumns() * 5;
   grid.innerHTML = '';
   const start = (state.page-1)*state.perPage;
   const page = state.filtered.slice(start, start+state.perPage);
@@ -500,14 +568,24 @@ function openBookModal(book) {
     loadCover(book.id); // async, will update when ready
   }
 
-  // Download buttons — one per formatEntry, labelled with source when merged
+  // Download buttons — deduplicate across sources: if two entries share the same
+  // format and the same non-null filesize they are the same file; keep the first.
   const btns = document.getElementById('bmDlButtons');
+  const seen = new Map(); // "format:filesize" → true
+  const dedupedEntries = book.formatEntries.filter(fe => {
+    if (!fe.filesize) return true; // can't tell — keep all
+    const key = `${fe.format}:${fe.filesize}`;
+    if (seen.has(key)) return false;
+    seen.set(key, true);
+    return true;
+  });
+
   btns.innerHTML = '';
-  if (book.formatEntries.length === 0) {
+  if (dedupedEntries.length === 0) {
     btns.innerHTML = '<span style="color:var(--muted);font-size:.82rem">No downloadable formats found.</span>';
   } else {
     // Read Online first
-    for (const fe of book.formatEntries) {
+    for (const fe of dedupedEntries) {
       if (fe.format === 'epub' && fe.sourceFile) {
         const readBtn = document.createElement('a');
         readBtn.className = 'btn-dl btn-read';
@@ -519,7 +597,7 @@ function openBookModal(book) {
       }
     }
     // Download buttons
-    for (const fe of book.formatEntries) {
+    for (const fe of dedupedEntries) {
       const btn = document.createElement('button');
       btn.className = 'btn-dl';
       const fmtLabel = fe.format.toUpperCase();
@@ -618,24 +696,29 @@ async function downloadBook(fe, entry, btn) {
 // ═══════════════════════════════════════════════════════════════
 // Source management
 // ═══════════════════════════════════════════════════════════════
-function removeSource(url) {
-  url = normaliseUrl(url);
+function removeSource(rawUrl) {
+  const url = normaliseUrl(rawUrl);
+  // Clean up localStorage metadata for all matching raw-URL entries
+  state.sources.filter(s => normaliseUrl(s.url) === url).forEach(s => _delMeta(s.url));
   state.sources = state.sources.filter(s => normaliseUrl(s.url) !== url);
-  state.libs.delete(url);
-  // Clean up cover cache for books from this lib
-  for (const [id, _] of (state.libs.get(url)||{books:new Map()}).books||[]) {
-    const cached = state.coverCache.get(id);
-    if (cached) { URL.revokeObjectURL(cached); state.coverCache.delete(id); }
+  const lib = state.libs.get(url);
+  if (lib) {
+    for (const [id] of lib.books) {
+      const cached = state.coverCache.get(id);
+      if (cached) { URL.revokeObjectURL(cached); state.coverCache.delete(id); }
+    }
   }
+  state.libs.delete(url);
   saveSources(state.sources);
   rebuildBookList();
   renderAll();
 }
 
-async function addSource(url, name, password) {
-  url = normaliseUrl(url);
+async function addSource(rawUrl, name, password) {
+  // Normalise only for network/dedup purposes; rawUrl is what gets stored
+  const url = normaliseUrl(rawUrl);
   if (!state.sources.find(s => normaliseUrl(s.url) === url)) {
-    const src = { url, name: name || url };
+    const src = { url: rawUrl, name: name || rawUrl };
     if (password != null) src.password = password;
     state.sources.push(src);
     saveSources(state.sources);
@@ -643,12 +726,12 @@ async function addSource(url, name, password) {
   }
   try {
     const { name: realName, bookCount } = await loadLibrary(url);
-    // Update name in sources if we got a real one
+    // Update stored name to the real library name
     const src = state.sources.find(s => normaliseUrl(s.url) === url);
     if (src) { src.name = realName || src.name; saveSources(state.sources); }
     renderAll();
   } catch(err) {
-    showStatus('Error loading '+url+': '+err.message, 'error');
+    showStatus('Error loading ' + rawUrl + ': ' + err.message, 'error');
     renderChips();
   }
 }
@@ -678,8 +761,7 @@ async function previewLibrary() {
   const raw = document.getElementById('addUrl').value.trim();
   if (!raw) return showAddError('Please enter a URL.');
   const url = normaliseUrl(raw);
-  // If shorthand was expanded, reflect the resolved URL back into the input
-  if (url !== raw) document.getElementById('addUrl').value = url;
+  // Keep the input showing the original shorthand — don't expand it
   if (state.sources.find(s => normaliseUrl(s.url) === url)) {
     return showAddError('This source is already in your library list.');
   }
@@ -690,39 +772,52 @@ async function previewLibrary() {
   try {
     const libJson = await fetchLib(url);
     const encryptionType = libJson.encryption_type;
-    let bookCount = '?';
-    if (encryptionType === 0) {
+    let bookCount = 0;
+    if (!libJson.index) {
+      // Links-only library — no books at all
+      bookCount = 0;
+    } else if (encryptionType === 0) {
       try {
         const idx = await decryptIndex(libJson, '0');
         bookCount = Object.keys(idx).length;
       } catch { bookCount = '?'; }
+    } else {
+      bookCount = '🔐';
     }
-    const links = libJson.links || {};
-    const linkEntries = Object.entries(links)
-      .filter(([,v]) => v && (v.link||v.url));
+    const links = libJson.links || [];
+    // Support both new array format and legacy {name: {link/url}} object format
+    let linkEntries; // [{rawUrl, label}]
+    if (Array.isArray(links)) {
+      linkEntries = links.map(u => ({ rawUrl: String(u), label: String(u) }));
+    } else {
+      linkEntries = Object.entries(links)
+        .filter(([,v]) => v && (v.link||v.url))
+        .map(([name, v]) => ({ rawUrl: v.link || v.url, label: name }));
+    }
+    linkEntries = linkEntries.filter(e => e.rawUrl);
 
     document.getElementById('prevName').textContent = libJson.name || url;
-    document.getElementById('prevCount').textContent = encryptionType !== 0
+    document.getElementById('prevCount').textContent = encryptionType !== 0 && libJson.index
       ? `🔐 Password required · type ${encryptionType}`
-      : `${bookCount} book${bookCount!==1?'s':''}  · type ${encryptionType}`;
+      : `${bookCount} book${bookCount!==1?'s':''}${linkEntries.length ? ` · ${linkEntries.length} link${linkEntries.length!==1?'s':''}` : ''}`;
 
     const lc = document.getElementById('linkedContainer');
     const ll = document.getElementById('linkedList');
     ll.innerHTML = '';
     if (linkEntries.length > 0) {
       lc.style.display = 'block';
-      for (const [name, val] of linkEntries) {
-        const linkUrl = normaliseUrl(val.link || val.url || '');
+      for (const { rawUrl, label } of linkEntries) {
+        const linkUrl = normaliseUrl(rawUrl);
         const already = !!state.sources.find(s => normaliseUrl(s.url) === linkUrl);
         const item = document.createElement('div');
         item.className = 'linked-item';
         item.innerHTML = `
-          <input type="checkbox" id="lnk-${esc(linkUrl)}" value="${esc(linkUrl)}" ${already?'disabled checked':''}>
+          <input type="checkbox" id="lnk-${esc(linkUrl)}" value="${esc(rawUrl)}" ${already ? 'disabled checked' : 'checked'}>
           <div>
-            <div class="linked-name">${esc(name)}</div>
-            <div class="linked-url">${esc(linkUrl)}</div>
+            <div class="linked-name">${esc(label)}</div>
+            <div class="linked-url">${esc(rawUrl)}</div>
           </div>
-          ${already?'<span class="linked-already">✓ already added</span>':''}
+          ${already ? '<span class="linked-already">✓ already added</span>' : ''}
         `;
         ll.appendChild(item);
       }
@@ -731,7 +826,7 @@ async function previewLibrary() {
     document.getElementById('addPreview').classList.add('show');
     document.getElementById('addConfirmBtn').style.display = '';
     document.getElementById('addPreviewBtn').style.display = 'none';
-    _pendingLib = { url, name: libJson.name||url, links: linkEntries, encryptionType, libJson };
+    _pendingLib = { url: raw, name: libJson.name||raw, links: linkEntries, encryptionType, libJson };
   } catch(err) {
     showAddError('Could not load library: '+err.message);
   } finally {
@@ -917,10 +1012,11 @@ document.getElementById('srcImportConfirm').addEventListener('click', () => {
   const newSources = [];
   for (const item of parsed) {
     if (!item.url) continue;
-    const url = normaliseUrl(item.url);
-    if (!state.sources.find(s => normaliseUrl(s.url) === url)) {
-      state.sources.push({ url, name: item.name || url });
-      newSources.push({ url, name: item.name || url });
+    const rawItemUrl = item.url; // preserve as-entered (shorthand or full)
+    const normUrl = normaliseUrl(rawItemUrl);
+    if (!state.sources.find(s => normaliseUrl(s.url) === normUrl)) {
+      state.sources.push({ url: rawItemUrl, name: item.name || rawItemUrl });
+      newSources.push({ url: rawItemUrl, name: item.name || rawItemUrl });
     }
   }
   saveSources(state.sources);
@@ -943,6 +1039,11 @@ document.getElementById('btnAdd').addEventListener('click', () => {
   openAddDialog();
 });
 document.getElementById('addCancel').addEventListener('click', closeAddDialog);
+document.querySelector('.hint-fill-btn')?.addEventListener('click', e => {
+  e.preventDefault();
+  document.getElementById('addUrl').value = 'github:Auchrio/OpenLibrary';
+  document.getElementById('addUrl').focus();
+});
 document.getElementById('addPreviewBtn').addEventListener('click', previewLibrary);
 document.getElementById('addConfirmBtn').addEventListener('click', confirmImport);
 document.getElementById('bmClose').addEventListener('click', () => {
@@ -983,6 +1084,23 @@ document.getElementById('sortSelect').addEventListener('change', e => {
   state.sort = e.target.value;
   applyFilter();
 });
+
+// Re-paginate when the window is resized and the column count changes
+;(function() {
+  let _cols = 0, _raf = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(_raf);
+    _raf = requestAnimationFrame(() => {
+      const cols = getGridColumns();
+      if (cols !== _cols) {
+        _cols = cols;
+        state.page = 1;
+        renderGrid();
+        renderPagination();
+      }
+    });
+  });
+})();
 
 // ═══════════════════════════════════════════════════════════════
 // Initialise — load all sources from hash

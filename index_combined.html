@@ -8,356 +8,402 @@
   <!-- Apply saved theme before first paint to prevent flash -->
   <script>(function(){try{var t=localStorage.getItem('ol-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t;}catch(e){}}());</script>
   <style>
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+/* ── Reset ── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 
-    /* ── Dark theme (default) ── */
-    html{
-      --bg:#121212;--bg2:#1c1c1c;--surface:#242424;--surface-raised:#2e2e2e;
-      --border:rgba(255,255,255,.1);--border-strong:rgba(255,255,255,.2);
-      --text:#f2f2f2;--muted:#888888;
-      --input-bg:rgba(255,255,255,.06);--card-bg:rgba(255,255,255,.04);
-      --header-bg:rgba(18,18,18,.92);--modal-bg:#1c1c1c;
-      --btn-primary-bg:#efefef;--btn-primary-text:#111111;
-      --btn-secondary-bg:rgba(255,255,255,.07);--btn-secondary-border:rgba(255,255,255,.13);
-      --cover-ph:#2c2c2c;--cover-ph-text:rgba(255,255,255,.18);
-      --series-color:#b0b0b0;--tag-bg:rgba(255,255,255,.07);--tag-border:rgba(255,255,255,.12);
-      --scrollbar:rgba(255,255,255,.18);--shadow:rgba(0,0,0,.55);
-      --logo-from:#d0d0d0;--logo-to:#ffffff;
-      --status-info-bg:rgba(100,181,246,.1);--status-info-border:rgba(100,181,246,.25);
-      --status-info-text:#7ec8f8;
-      --status-error-bg:rgba(255,82,82,.1);--status-error-border:rgba(255,82,82,.25);
-      --status-error-text:#ff8a80;
-      --radius:10px;--transition:.18s ease;
-    }
-    /* ── Light theme — applied when system prefers light and no manual override ── */
-    @media(prefers-color-scheme:light){
-      html:not([data-theme]){
-        --bg:#f0f0f0;--bg2:#ffffff;--surface:#e4e4e4;--surface-raised:#ffffff;
-        --border:rgba(0,0,0,.1);--border-strong:rgba(0,0,0,.2);
-        --text:#1a1a1a;--muted:#636363;
-        --input-bg:rgba(0,0,0,.04);--card-bg:rgba(0,0,0,.03);
-        --header-bg:rgba(240,240,240,.92);--modal-bg:#ffffff;
-        --btn-primary-bg:#1a1a1a;--btn-primary-text:#ffffff;
-        --btn-secondary-bg:rgba(0,0,0,.05);--btn-secondary-border:rgba(0,0,0,.12);
-        --cover-ph:#d4d4d4;--cover-ph-text:rgba(0,0,0,.2);
-        --series-color:#555555;--tag-bg:rgba(0,0,0,.05);--tag-border:rgba(0,0,0,.1);
-        --scrollbar:rgba(0,0,0,.2);--shadow:rgba(0,0,0,.12);
-        --logo-from:#333333;--logo-to:#000000;
-        --status-info-bg:rgba(30,120,190,.08);--status-info-border:rgba(30,120,190,.2);
-        --status-info-text:#1565c0;
-        --status-error-bg:rgba(200,0,0,.07);--status-error-border:rgba(200,0,0,.2);
-        --status-error-text:#c62828;
-      }
-    }
-    /* ── Manual light override ── */
-    html[data-theme='light']{
-      --bg:#f0f0f0;--bg2:#ffffff;--surface:#e4e4e4;--surface-raised:#ffffff;
-      --border:rgba(0,0,0,.1);--border-strong:rgba(0,0,0,.2);
-      --text:#1a1a1a;--muted:#636363;
-      --input-bg:rgba(0,0,0,.04);--card-bg:rgba(0,0,0,.03);
-      --header-bg:rgba(240,240,240,.92);--modal-bg:#ffffff;
-      --btn-primary-bg:#1a1a1a;--btn-primary-text:#ffffff;
-      --btn-secondary-bg:rgba(0,0,0,.05);--btn-secondary-border:rgba(0,0,0,.12);
-      --cover-ph:#d4d4d4;--cover-ph-text:rgba(0,0,0,.2);
-      --series-color:#555555;--tag-bg:rgba(0,0,0,.05);--tag-border:rgba(0,0,0,.1);
-      --scrollbar:rgba(0,0,0,.2);--shadow:rgba(0,0,0,.12);
-      --logo-from:#333333;--logo-to:#000000;
-      --status-info-bg:rgba(30,120,190,.08);--status-info-border:rgba(30,120,190,.2);
-      --status-info-text:#1565c0;
-      --status-error-bg:rgba(200,0,0,.07);--status-error-border:rgba(200,0,0,.2);
-      --status-error-text:#c62828;
-    }
-    /* ── Sepia theme ── */
-    html[data-theme='sepia']{
-      --bg:#f3ead3;--bg2:#faf4e4;--surface:#ede3c8;--surface-raised:#faf4e4;
-      --border:rgba(100,70,30,.15);--border-strong:rgba(100,70,30,.28);
-      --text:#3b2a1a;--muted:#7a6040;
-      --input-bg:rgba(100,70,30,.06);--card-bg:rgba(100,70,30,.04);
-      --header-bg:rgba(243,234,211,.92);--modal-bg:#faf4e4;
-      --btn-primary-bg:#4a3320;--btn-primary-text:#faf4e4;
-      --btn-secondary-bg:rgba(100,70,30,.07);--btn-secondary-border:rgba(100,70,30,.15);
-      --cover-ph:#dfd5be;--cover-ph-text:rgba(60,40,10,.2);
-      --series-color:#7a6040;--tag-bg:rgba(100,70,30,.07);--tag-border:rgba(100,70,30,.14);
-      --scrollbar:rgba(100,70,30,.25);--shadow:rgba(80,50,10,.18);
-      --logo-from:#6b4c24;--logo-to:#3b2a1a;
-      --status-info-bg:rgba(90,130,80,.1);--status-info-border:rgba(90,130,80,.25);
-      --status-info-text:#4a7c40;
-      --status-error-bg:rgba(180,60,10,.1);--status-error-border:rgba(180,60,10,.25);
-      --status-error-text:#b83c0a;
-    }
+/* ── Dark theme (default) ── */
+html{
+  --bg:#121212;--bg2:#1c1c1c;--surface:#242424;--surface-raised:#2e2e2e;
+  --border:rgba(255,255,255,.1);--border-strong:rgba(255,255,255,.2);
+  --text:#f2f2f2;--muted:#888888;
+  --input-bg:rgba(255,255,255,.06);--card-bg:rgba(255,255,255,.04);
+  --header-bg:rgba(18,18,18,.92);--modal-bg:#1c1c1c;
+  --btn-primary-bg:#efefef;--btn-primary-text:#111111;
+  --btn-secondary-bg:rgba(255,255,255,.07);--btn-secondary-border:rgba(255,255,255,.13);
+  --cover-ph:#2c2c2c;--cover-ph-text:rgba(255,255,255,.18);
+  --series-color:#b0b0b0;--tag-bg:rgba(255,255,255,.07);--tag-border:rgba(255,255,255,.12);
+  --scrollbar:rgba(255,255,255,.18);--shadow:rgba(0,0,0,.55);
+  --logo-from:#d0d0d0;--logo-to:#ffffff;
+  --status-info-bg:rgba(100,181,246,.1);--status-info-border:rgba(100,181,246,.25);
+  --status-info-text:#7ec8f8;
+  --status-error-bg:rgba(255,82,82,.1);--status-error-border:rgba(255,82,82,.25);
+  --status-error-text:#ff8a80;
+  --radius:10px;--transition:.18s ease;
+}
 
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-      background:var(--bg);color:var(--text);min-height:100vh;
-      transition:background .22s ease,color .22s ease;}
-    a{color:inherit}
-    button{cursor:pointer;font-family:inherit}
+/* ── Light theme — applied when system prefers light and no manual override ── */
+@media(prefers-color-scheme:light){
+  html:not([data-theme]){
+    --bg:#f0f0f0;--bg2:#ffffff;--surface:#e4e4e4;--surface-raised:#ffffff;
+    --border:rgba(0,0,0,.1);--border-strong:rgba(0,0,0,.2);
+    --text:#1a1a1a;--muted:#636363;
+    --input-bg:rgba(0,0,0,.04);--card-bg:rgba(0,0,0,.03);
+    --header-bg:rgba(240,240,240,.92);--modal-bg:#ffffff;
+    --btn-primary-bg:#1a1a1a;--btn-primary-text:#ffffff;
+    --btn-secondary-bg:rgba(0,0,0,.05);--btn-secondary-border:rgba(0,0,0,.12);
+    --cover-ph:#d4d4d4;--cover-ph-text:rgba(0,0,0,.2);
+    --series-color:#555555;--tag-bg:rgba(0,0,0,.05);--tag-border:rgba(0,0,0,.1);
+    --scrollbar:rgba(0,0,0,.2);--shadow:rgba(0,0,0,.12);
+    --logo-from:#333333;--logo-to:#000000;
+    --status-info-bg:rgba(30,120,190,.08);--status-info-border:rgba(30,120,190,.2);
+    --status-info-text:#1565c0;
+    --status-error-bg:rgba(200,0,0,.07);--status-error-border:rgba(200,0,0,.2);
+    --status-error-text:#c62828;
+  }
+}
 
-    /* ── Header ── */
-    header{
-      position:sticky;top:0;z-index:100;
-      background:var(--header-bg);backdrop-filter:blur(12px);
-      border-bottom:1px solid var(--border);padding:14px 24px;
-    }
-    .header-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-    .logo-group{display:flex;align-items:center;gap:10px;flex-shrink:0}
-    .logo-group h1{font-size:1.35rem;
-      background:linear-gradient(135deg,var(--logo-from),var(--logo-to));
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .logo-icon{font-size:1.4rem}
-    /* ── Sources button (in header-actions) ── */
-    .btn-sources{display:inline-flex;align-items:center;gap:7px;
-      padding:7px 14px;background:var(--btn-secondary-bg);
-      border:1px solid var(--btn-secondary-border);border-radius:8px;
-      color:var(--text);font-size:.85rem;font-weight:600;white-space:nowrap;
-      transition:border-color var(--transition),background var(--transition)}
-    .btn-sources:hover{background:var(--surface-raised);border-color:var(--border-strong)}
-    /* ── Sources manager modal ── */
-    .sources-modal-box{
-      max-width:660px;display:flex;flex-direction:column;
-      max-height:85vh;overflow:hidden;
-    }
-    .sources-modal-box.modal-box{overflow:hidden}
-    .sources-modal-header{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:20px 24px 16px;border-bottom:1px solid var(--border);flex-shrink:0;
-    }
-    .sources-modal-title{font-size:1.05rem;font-weight:700}
-    .sources-modal-toolbar{
-      display:flex;align-items:center;gap:8px;
-      padding:14px 16px;border-bottom:1px solid var(--border);
-      flex-wrap:wrap;flex-shrink:0;
-    }
-    .sources-modal-toolbar .btn-primary{margin-left:auto}
-    .src-import-panel{
-      padding:14px 16px;border-bottom:1px solid var(--border);
-      flex-shrink:0;display:none;
-    }
-    .src-import-panel.show{display:block}
-    .src-import-ta{
-      min-height:90px;resize:vertical;
-      font-family:ui-monospace,"Cascadia Code",monospace;font-size:.78rem;
-    }
-    #srcList{overflow-y:auto;flex:1}
-    .src-panel-header{padding:14px 16px 10px;
-      font-size:.72rem;font-weight:700;letter-spacing:.07em;
-      text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
-    .src-empty{padding:20px 16px;color:var(--muted);font-size:.85rem;text-align:center}
-    .src-row{
-      display:grid;
-      grid-template-columns:1fr auto;
-      align-items:start;
-      gap:8px;
-      padding:12px 16px;
-      border-bottom:1px solid var(--border);
-    }
-    .src-row:last-of-type{border-bottom:none}
-    .src-info{min-width:0}
-    .src-name{font-weight:600;font-size:.88rem;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .src-url{font-size:.73rem;color:var(--muted);margin-top:2px;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .src-count{font-size:.72rem;margin-top:4px;
-      display:inline-flex;align-items:center;gap:4px}
-    .src-count-badge{background:var(--tag-bg);border:1px solid var(--border);
-      border-radius:100px;padding:1px 8px;font-size:.7rem}
-    .src-count-loading{color:var(--muted)}
-    .src-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;padding-top:2px}
-    .src-btn{background:none;border:1px solid var(--border);border-radius:6px;
-      color:var(--muted);padding:4px 8px;font-size:.75rem;line-height:1.4;
-      transition:background var(--transition),color var(--transition),border-color var(--transition)}
-    .src-btn:hover{background:var(--tag-bg);color:var(--text);border-color:var(--border-strong)}
-    .src-panel-footer{padding:12px 16px;border-top:1px solid var(--border)}
-    .header-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
-    .theme-select{padding:7px 10px;background:var(--btn-secondary-bg);
-      border:1px solid var(--btn-secondary-border);
-      border-radius:8px;color:var(--text);font-size:.8rem;outline:none;cursor:pointer;
-      transition:border-color var(--transition)}
-    .theme-select:hover{border-color:var(--border-strong)}
-    .theme-select option{background:var(--modal-bg)}
-    .btn-add{background:var(--btn-primary-bg);border:none;
-      color:var(--btn-primary-text);padding:8px 18px;border-radius:8px;
-      font-size:.85rem;font-weight:600;
-      transition:opacity var(--transition);white-space:nowrap;}
-    .btn-add:hover{opacity:.75}
+/* ── Manual light override ── */
+html[data-theme='light']{
+  --bg:#f0f0f0;--bg2:#ffffff;--surface:#e4e4e4;--surface-raised:#ffffff;
+  --border:rgba(0,0,0,.1);--border-strong:rgba(0,0,0,.2);
+  --text:#1a1a1a;--muted:#636363;
+  --input-bg:rgba(0,0,0,.04);--card-bg:rgba(0,0,0,.03);
+  --header-bg:rgba(240,240,240,.92);--modal-bg:#ffffff;
+  --btn-primary-bg:#1a1a1a;--btn-primary-text:#ffffff;
+  --btn-secondary-bg:rgba(0,0,0,.05);--btn-secondary-border:rgba(0,0,0,.12);
+  --cover-ph:#d4d4d4;--cover-ph-text:rgba(0,0,0,.2);
+  --series-color:#555555;--tag-bg:rgba(0,0,0,.05);--tag-border:rgba(0,0,0,.1);
+  --scrollbar:rgba(0,0,0,.2);--shadow:rgba(0,0,0,.12);
+  --logo-from:#333333;--logo-to:#000000;
+  --status-info-bg:rgba(30,120,190,.08);--status-info-border:rgba(30,120,190,.2);
+  --status-info-text:#1565c0;
+  --status-error-bg:rgba(200,0,0,.07);--status-error-border:rgba(200,0,0,.2);
+  --status-error-text:#c62828;
+}
 
-    /* ── Toolbar ── */
-    .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 24px 0}
-    .search-wrap{position:relative;flex:1;min-width:200px}
-    .search-wrap::before{content:'🔍';position:absolute;left:12px;top:50%;
-      transform:translateY(-50%);pointer-events:none;font-size:.9rem}
-    #searchInput{width:100%;padding:9px 14px 9px 36px;
-      background:var(--input-bg);border:1px solid var(--border);
-      border-radius:8px;color:var(--text);font-size:.9rem;outline:none;
-      transition:border-color var(--transition)}
-    #searchInput:focus{border-color:var(--border-strong)}
-    #searchInput::placeholder{color:var(--muted)}
-    select{padding:9px 14px;background:var(--input-bg);
-      border:1px solid var(--border);border-radius:8px;
-      color:var(--text);font-size:.85rem;outline:none;cursor:pointer}
-    select option{background:var(--modal-bg)}
-    .book-count{color:var(--muted);font-size:.82rem;white-space:nowrap}
+/* ── Sepia theme ── */
+html[data-theme='sepia']{
+  --bg:#f3ead3;--bg2:#faf4e4;--surface:#ede3c8;--surface-raised:#faf4e4;
+  --border:rgba(100,70,30,.15);--border-strong:rgba(100,70,30,.28);
+  --text:#3b2a1a;--muted:#7a6040;
+  --input-bg:rgba(100,70,30,.06);--card-bg:rgba(100,70,30,.04);
+  --header-bg:rgba(243,234,211,.92);--modal-bg:#faf4e4;
+  --btn-primary-bg:#4a3320;--btn-primary-text:#faf4e4;
+  --btn-secondary-bg:rgba(100,70,30,.07);--btn-secondary-border:rgba(100,70,30,.15);
+  --cover-ph:#dfd5be;--cover-ph-text:rgba(60,40,10,.2);
+  --series-color:#7a6040;--tag-bg:rgba(100,70,30,.07);--tag-border:rgba(100,70,30,.14);
+  --scrollbar:rgba(100,70,30,.25);--shadow:rgba(80,50,10,.18);
+  --logo-from:#6b4c24;--logo-to:#3b2a1a;
+  --status-info-bg:rgba(90,130,80,.1);--status-info-border:rgba(90,130,80,.25);
+  --status-info-text:#4a7c40;
+  --status-error-bg:rgba(180,60,10,.1);--status-error-border:rgba(180,60,10,.25);
+  --status-error-text:#b83c0a;
+}
 
-    /* ── Status banner ── */
-    .status-banner{margin:14px 24px 0;padding:10px 16px;border-radius:8px;
-      font-size:.85rem;display:none}
-    .status-banner.info{background:var(--status-info-bg);border:1px solid var(--status-info-border);color:var(--status-info-text)}
-    .status-banner.error{background:var(--status-error-bg);border:1px solid var(--status-error-border);color:var(--status-error-text)}
-    .status-banner.show{display:block}
+/* ── Base element styles ── */
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;
+  transition:background .22s ease,color .22s ease;}
+a{color:inherit}
+button{cursor:pointer;font-family:inherit}
 
-    /* ── Grid ── */
-    .book-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-      gap:18px;padding:18px 24px;
-    }
-    .book-card{
-      background:var(--card-bg);border:1px solid var(--border);
-      border-radius:var(--radius);overflow:hidden;cursor:pointer;
-      transition:transform var(--transition),border-color var(--transition),
-        box-shadow var(--transition);display:flex;flex-direction:column;
-    }
-    .book-card:hover{transform:translateY(-4px);border-color:var(--border-strong);
-      box-shadow:0 8px 28px var(--shadow)}
-    .cover-wrap{width:100%;aspect-ratio:2/3;overflow:hidden;flex-shrink:0;position:relative}
-    .cover-wrap img,.cover-placeholder{width:100%;height:100%;object-fit:cover;display:block}
-    .cover-placeholder{
-      display:flex;align-items:center;justify-content:center;
-      font-size:3rem;font-weight:700;color:var(--cover-ph-text);
-      background:var(--cover-ph);
-    }
-    .book-info{padding:10px 10px 12px;flex:1;display:flex;flex-direction:column;gap:4px}
-    .book-title{font-size:.82rem;font-weight:600;line-height:1.3;
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-    .book-author{font-size:.73rem;color:var(--muted);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .book-series{font-size:.68rem;color:var(--series-color);margin-top:auto;padding-top:4px;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .book-card-dl{margin-top:8px;padding:5px 0;width:100%;
-      background:var(--tag-bg);border:1px solid var(--border);
-      border-radius:6px;font-size:.75rem;color:var(--text);
-      transition:background var(--transition)}
-    .book-card-dl:hover{background:var(--surface-raised)}
+/* ── Header ── */
+header{
+  position:sticky;top:0;z-index:100;
+  background:var(--header-bg);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:14px 24px;
+}
+.header-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo-group{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-group h1{font-size:1.35rem;
+  background:linear-gradient(135deg,var(--logo-from),var(--logo-to));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-icon{font-size:1.4rem}
+.header-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
 
-    /* ── Empty / Loading state ── */
-    .empty-state{text-align:center;padding:80px 24px;color:var(--muted);display:none}
-    .empty-state.show{display:block}
-    .empty-icon{font-size:4rem;margin-bottom:16px}
-    .empty-title{font-size:1.1rem;margin-bottom:8px;color:var(--text)}
-    .empty-sub{font-size:.9rem}
+/* ── Sources button (in header-actions) ── */
+.btn-sources{display:inline-flex;align-items:center;gap:7px;
+  padding:7px 14px;background:var(--btn-secondary-bg);
+  border:1px solid var(--btn-secondary-border);border-radius:8px;
+  color:var(--text);font-size:.85rem;font-weight:600;white-space:nowrap;
+  transition:border-color var(--transition),background var(--transition)}
+.btn-sources:hover{background:var(--surface-raised);border-color:var(--border-strong)}
 
-    /* ── Pagination ── */
-    .pagination{display:flex;justify-content:center;align-items:center;
-      gap:6px;padding:20px 24px 32px;flex-wrap:wrap}
-    .page-btn{min-width:36px;height:36px;padding:0 8px;
-      background:var(--card-bg);border:1px solid var(--border);
-      border-radius:6px;color:var(--text);font-size:.85rem;
-      transition:background var(--transition),border-color var(--transition)}
-    .page-btn:hover,.page-btn.active{background:var(--tag-bg);border-color:var(--border-strong)}
-    .page-btn.active{font-weight:700}
-    .page-dots{color:var(--muted);padding:0 4px}
+/* ── Theme selector & add button (in header-actions) ── */
+.theme-select{padding:7px 10px;background:var(--btn-secondary-bg);
+  border:1px solid var(--btn-secondary-border);
+  border-radius:8px;color:var(--text);font-size:.8rem;outline:none;cursor:pointer;
+  transition:border-color var(--transition)}
+.theme-select:hover{border-color:var(--border-strong)}
+.theme-select option{background:var(--modal-bg)}
+.btn-add{background:var(--btn-primary-bg);border:none;
+  color:var(--btn-primary-text);padding:8px 18px;border-radius:8px;
+  font-size:.85rem;font-weight:600;
+  transition:opacity var(--transition);white-space:nowrap;}
+.btn-add:hover{opacity:.75}
 
-    /* ── Modals (shared) ── */
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);
-      backdrop-filter:blur(4px);z-index:200;display:flex;
-      align-items:center;justify-content:center;padding:20px;opacity:0;
-      pointer-events:none;transition:opacity .22s ease}
-    .overlay.open{opacity:1;pointer-events:all}
-    .modal-box{background:var(--modal-bg);border:1px solid var(--border);
-      border-radius:14px;max-height:90vh;overflow-y:auto;width:100%;
-      transform:translateY(12px);transition:transform .22s ease;
-      box-shadow:0 24px 64px var(--shadow);}
-    .overlay.open .modal-box{transform:none}
+/* ── Toolbar ── */
+.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 24px 0}
+.search-wrap{position:relative;flex:1;min-width:200px}
+.search-wrap::before{content:'🔍';position:absolute;left:12px;top:50%;
+  transform:translateY(-50%);pointer-events:none;font-size:.9rem}
+#searchInput{width:100%;padding:9px 14px 9px 36px;
+  background:var(--input-bg);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:.9rem;outline:none;
+  transition:border-color var(--transition)}
+#searchInput:focus{border-color:var(--border-strong)}
+#searchInput::placeholder{color:var(--muted)}
+select{padding:9px 14px;background:var(--input-bg);
+  border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-size:.85rem;outline:none;cursor:pointer}
+select option{background:var(--modal-bg)}
+.book-count{color:var(--muted);font-size:.82rem;white-space:nowrap}
 
-    /* ── Book detail modal ── */
-    .book-modal-box{max-width:600px}
-    .bm-inner{display:flex;gap:24px;padding:28px;align-items:flex-start}
-    @media(max-width:520px){.bm-inner{flex-direction:column}.bm-cover{align-self:center}}
-    .bm-cover{flex-shrink:0;width:140px;border-radius:8px;overflow:hidden;
-      box-shadow:0 6px 24px rgba(0,0,0,.5)}
-    .bm-cover img,.bm-cover .bm-cover-ph{width:140px;height:210px;object-fit:cover;display:block}
-    .bm-cover-ph{background:var(--cover-ph);
-      display:flex;align-items:center;justify-content:center;
-      font-size:2.5rem;font-weight:700;color:var(--cover-ph-text)}
-    .bm-meta{flex:1;min-width:0}
-    .bm-title{font-size:1.2rem;font-weight:700;line-height:1.3;margin-bottom:6px}
-    .bm-author{color:var(--series-color);font-size:.9rem;margin-bottom:14px}
-    .meta-row{display:flex;gap:8px;font-size:.82rem;margin-bottom:6px;align-items:baseline}
-    .meta-label{color:var(--muted);flex-shrink:0;width:90px}
-    .meta-value{color:var(--text)}
-    .bm-formats{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
-    .btn-dl{display:inline-flex;align-items:center;gap:7px;
-      padding:9px 18px;border-radius:8px;font-size:.85rem;font-weight:600;
-      border:none;color:var(--btn-primary-text);background:var(--btn-primary-bg);
-      transition:opacity var(--transition),transform var(--transition)}
-    .btn-dl:hover{opacity:.75;transform:translateY(-1px)}
-    .btn-dl:disabled{opacity:.45;transform:none;cursor:wait}
-    .btn-read{text-decoration:none;cursor:pointer}
-    .btn-read:hover{opacity:.75;transform:translateY(-1px)}
-    .bm-close{position:absolute;top:14px;right:14px;background:none;border:none;
-      color:var(--muted);font-size:1.4rem;line-height:1;padding:4px;
-      transition:color var(--transition)}
-    .bm-close:hover{color:var(--text)}
-    .modal-box{position:relative}
-    .bm-source-tag{display:inline-block;background:var(--tag-bg);
-      border:1px solid var(--tag-border);border-radius:100px;
-      padding:2px 10px;font-size:.72rem;color:var(--muted);margin-bottom:8px}
+/* ── Status banner ── */
+.status-banner{margin:14px 24px 0;padding:10px 16px;border-radius:8px;
+  font-size:.85rem;display:none}
+.status-banner.info{background:var(--status-info-bg);border:1px solid var(--status-info-border);color:var(--status-info-text)}
+.status-banner.error{background:var(--status-error-bg);border:1px solid var(--status-error-border);color:var(--status-error-text)}
+.status-banner.show{display:block}
 
-    /* ── Add-source dialog ── */
-    .dlg-box{max-width:500px;padding:28px}
-    .dlg-title{font-size:1.05rem;font-weight:700;margin-bottom:18px;
-      display:flex;align-items:center;gap:8px}
-    .dlg-label{font-size:.82rem;color:var(--muted);margin-bottom:7px;display:block}
-    .dlg-input{width:100%;padding:10px 14px;
-      background:var(--input-bg);border:1px solid var(--border);
-      border-radius:8px;color:var(--text);font-size:.9rem;outline:none;
-      transition:border-color var(--transition)}
-    .dlg-input:focus{border-color:var(--border-strong)}
-    .dlg-input::placeholder{color:var(--muted)}
-    .dlg-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
-    .btn-secondary{padding:8px 18px;border-radius:8px;background:var(--btn-secondary-bg);
-      border:1px solid var(--btn-secondary-border);color:var(--text);font-size:.85rem;
-      transition:background var(--transition)}
-    .btn-secondary:hover{background:var(--surface-raised)}
-    .btn-primary{padding:8px 20px;border-radius:8px;border:none;
-      background:var(--btn-primary-bg);color:var(--btn-primary-text);
-      font-size:.85rem;font-weight:600;transition:opacity var(--transition)}
-    .btn-primary:hover{opacity:.75}
-    .btn-primary:disabled{opacity:.45;cursor:not-allowed}
-    .preview-box{margin-top:16px;padding:14px;background:var(--tag-bg);
-      border:1px solid var(--border);border-radius:8px;display:none}
-    .preview-box.show{display:block}
-    .preview-name{font-weight:600;font-size:.95rem;margin-bottom:4px}
-    .preview-count{font-size:.8rem;color:var(--muted)}
-    .linked-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
-    .linked-item{display:flex;align-items:center;gap:10px;font-size:.82rem}
-    .linked-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--btn-primary-bg);flex-shrink:0}
-    .linked-name{font-weight:600}
-    .linked-url{color:var(--muted);font-size:.74rem;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
-    .linked-already{font-size:.72rem;color:#81c784;margin-left:auto;flex-shrink:0}
-    .error-msg{color:var(--status-error-text);font-size:.82rem;margin-top:10px;display:none}
-    .error-msg.show{display:block}
-    .spinner{display:inline-block;width:16px;height:16px;
-      border:2px solid rgba(128,128,128,.35);border-top-color:currentColor;
-      border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .dl-prog-wrap{position:relative;display:inline-flex;align-items:center;
-      min-width:170px;height:1.15em;background:rgba(0,0,0,.18);
-      border-radius:4px;overflow:hidden}
-    .dl-prog-bar{position:absolute;left:0;top:0;height:100%;
-      background:rgba(255,255,255,.32);border-radius:4px;
-      transition:width .12s linear}
-    .dl-prog-label{position:relative;z-index:1;font-size:.8rem;
-      white-space:nowrap;padding:0 8px;letter-spacing:.01em}
-    .key-dlg-desc{font-size:.88rem;color:var(--text);margin-bottom:14px;line-height:1.5}
-    .hint{font-size:.77rem;color:var(--muted);margin-top:6px}
-    .hint code{background:var(--tag-bg);border:1px solid var(--border);
-      border-radius:4px;padding:1px 5px;font-size:.76rem;color:var(--text)}
+/* ── Grid ── */
+.book-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:18px;padding:18px 24px;
+}
+.book-card{
+  background:var(--card-bg);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;cursor:pointer;
+  transition:transform var(--transition),border-color var(--transition),
+    box-shadow var(--transition);display:flex;flex-direction:column;
+}
+.book-card:hover{transform:translateY(-4px);border-color:var(--border-strong);
+  box-shadow:0 8px 28px var(--shadow)}
+.cover-wrap{width:100%;aspect-ratio:2/3;overflow:hidden;flex-shrink:0;position:relative}
+.cover-wrap img,.cover-placeholder{width:100%;height:100%;object-fit:cover;display:block}
+.cover-placeholder{
+  display:flex;align-items:center;justify-content:center;
+  font-size:3rem;font-weight:700;color:var(--cover-ph-text);
+  background:var(--cover-ph);
+}
+.book-info{padding:10px 10px 12px;flex:1;display:flex;flex-direction:column;gap:4px}
+.book-title{font-size:.82rem;font-weight:600;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.book-author{font-size:.73rem;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.book-series{font-size:.68rem;color:var(--series-color);margin-top:auto;padding-top:4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.book-card-dl{margin-top:8px;padding:5px 0;width:100%;
+  background:var(--tag-bg);border:1px solid var(--border);
+  border-radius:6px;font-size:.75rem;color:var(--text);
+  transition:background var(--transition)}
+.book-card-dl:hover{background:var(--surface-raised)}
 
-    /* ── Scrollbar ── */
-    ::-webkit-scrollbar{width:6px;height:6px}
-    ::-webkit-scrollbar-track{background:transparent}
-    ::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:3px}
+/* ── Empty / Loading state ── */
+.empty-state{text-align:center;padding:80px 24px;color:var(--muted);display:none}
+.empty-state.show{display:block}
+.empty-icon{font-size:4rem;margin-bottom:16px}
+.empty-title{font-size:1.1rem;margin-bottom:8px;color:var(--text)}
+.empty-sub{font-size:.9rem}
+
+/* ── Pagination ── */
+.pagination{display:flex;justify-content:center;align-items:center;
+  gap:6px;padding:20px 24px 32px;flex-wrap:wrap}
+.page-btn{min-width:36px;height:36px;padding:0 8px;
+  background:var(--card-bg);border:1px solid var(--border);
+  border-radius:6px;color:var(--text);font-size:.85rem;
+  transition:background var(--transition),border-color var(--transition)}
+.page-btn:hover,.page-btn.active{background:var(--tag-bg);border-color:var(--border-strong)}
+.page-btn.active{font-weight:700}
+.page-dots{color:var(--muted);padding:0 4px}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:3px}
+
+/* ── Sources manager overlay ── */
+.sources-modal-box{
+  max-width:660px;display:flex;flex-direction:column;
+  max-height:85vh;overflow:hidden;
+}
+.sources-modal-box.modal-box{overflow:hidden}
+.sources-modal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 24px 16px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.sources-modal-title{font-size:1.05rem;font-weight:700}
+.sources-modal-toolbar{
+  display:flex;align-items:center;gap:8px;
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  flex-wrap:wrap;flex-shrink:0;
+}
+.sources-modal-toolbar .btn-primary{margin-left:auto}
+
+/* ── Import panel ── */
+.src-import-panel{
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  flex-shrink:0;display:none;
+}
+.src-import-panel.show{display:block}
+.src-import-ta{
+  min-height:90px;resize:vertical;
+  font-family:ui-monospace,"Cascadia Code",monospace;font-size:.78rem;
+}
+
+/* ── Source list ── */
+#srcList{overflow-y:auto;flex:1}
+.src-panel-header{padding:14px 16px 10px;
+  font-size:.72rem;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+.src-empty{padding:20px 16px;color:var(--muted);font-size:.85rem;text-align:center}
+.src-row{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:start;
+  gap:8px;
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+}
+.src-row:last-of-type{border-bottom:none}
+.src-info{min-width:0}
+.src-name{font-weight:600;font-size:.88rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-url{font-size:.73rem;color:var(--muted);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-count{font-size:.72rem;margin-top:4px;
+  display:inline-flex;align-items:center;gap:4px}
+.src-count-badge{background:var(--tag-bg);border:1px solid var(--border);
+  border-radius:100px;padding:1px 8px;font-size:.7rem}
+.src-count-loading{color:var(--muted)}
+.src-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;padding-top:2px}
+.src-btn{background:none;border:1px solid var(--border);border-radius:6px;
+  color:var(--muted);padding:4px 8px;font-size:.75rem;line-height:1.4;
+  transition:background var(--transition),color var(--transition),border-color var(--transition)}
+.src-btn:hover{background:var(--tag-bg);color:var(--text);border-color:var(--border-strong)}
+.src-btn.danger:hover{color:#ff8a80;border-color:rgba(255,82,82,.4)}
+.src-panel-footer{padding:12px 16px;border-top:1px solid var(--border)}
+
+/* ── Discovered-links panel (shown after refresh) ── */
+.src-discover-panel{
+  border-top:2px solid var(--status-info-border);
+  background:var(--status-info-bg);
+  flex-shrink:0;display:none;
+}
+.src-discover-panel.show{display:block}
+.src-discover-panel .src-panel-header{
+  color:var(--status-info-text);
+  border-bottom-color:var(--status-info-border);
+}
+.src-discover-desc{
+  padding:8px 16px 4px;font-size:.8rem;
+  color:var(--status-info-text);opacity:.85;
+}
+
+/* ── Modals (shared) ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);
+  backdrop-filter:blur(4px);z-index:200;display:flex;
+  align-items:center;justify-content:center;padding:20px;opacity:0;
+  pointer-events:none;transition:opacity .22s ease}
+.overlay.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--modal-bg);border:1px solid var(--border);
+  border-radius:14px;max-height:90vh;overflow-y:auto;width:100%;
+  transform:translateY(12px);transition:transform .22s ease;
+  box-shadow:0 24px 64px var(--shadow);position:relative}
+.overlay.open .modal-box{transform:none}
+
+/* ── Shared buttons ── */
+.btn-secondary{padding:8px 18px;border-radius:8px;background:var(--btn-secondary-bg);
+  border:1px solid var(--btn-secondary-border);color:var(--text);font-size:.85rem;
+  transition:background var(--transition)}
+.btn-secondary:hover{background:var(--surface-raised)}
+.btn-primary{padding:8px 20px;border-radius:8px;border:none;
+  background:var(--btn-primary-bg);color:var(--btn-primary-text);
+  font-size:.85rem;font-weight:600;transition:opacity var(--transition)}
+.btn-primary:hover{opacity:.75}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed}
+
+/* ── Book detail modal ── */
+.book-modal-box{max-width:600px}
+.bm-inner{display:flex;gap:24px;padding:28px;align-items:flex-start}
+@media(max-width:520px){.bm-inner{flex-direction:column}.bm-cover{align-self:center}}
+.bm-cover{flex-shrink:0;width:140px;border-radius:8px;overflow:hidden;
+  box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.bm-cover img,.bm-cover .bm-cover-ph{width:140px;height:210px;object-fit:cover;display:block}
+.bm-cover-ph{background:var(--cover-ph);
+  display:flex;align-items:center;justify-content:center;
+  font-size:2.5rem;font-weight:700;color:var(--cover-ph-text)}
+.bm-meta{flex:1;min-width:0}
+.bm-title{font-size:1.2rem;font-weight:700;line-height:1.3;margin-bottom:6px}
+.bm-author{color:var(--series-color);font-size:.9rem;margin-bottom:14px}
+.meta-row{display:flex;gap:8px;font-size:.82rem;margin-bottom:6px;align-items:baseline}
+.meta-label{color:var(--muted);flex-shrink:0;width:90px}
+.meta-value{color:var(--text)}
+.bm-formats{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.btn-dl{display:inline-flex;align-items:center;gap:7px;
+  padding:9px 18px;border-radius:8px;font-size:.85rem;font-weight:600;
+  border:none;color:var(--btn-primary-text);background:var(--btn-primary-bg);
+  transition:opacity var(--transition),transform var(--transition)}
+.btn-dl:hover{opacity:.75;transform:translateY(-1px)}
+.btn-dl:disabled{opacity:.45;transform:none;cursor:wait}
+.btn-read{text-decoration:none;cursor:pointer}
+.btn-read:hover{opacity:.75;transform:translateY(-1px)}
+.bm-close{position:absolute;top:14px;right:14px;background:none;border:none;
+  color:var(--muted);font-size:1.4rem;line-height:1;padding:4px;
+  transition:color var(--transition)}
+.bm-close:hover{color:var(--text)}
+.bm-source-tag{display:inline-block;background:var(--tag-bg);
+  border:1px solid var(--tag-border);border-radius:100px;
+  padding:2px 10px;font-size:.72rem;color:var(--muted);margin-bottom:8px}
+
+/* ── Download progress bar ── */
+.dl-prog-wrap{position:relative;display:inline-flex;align-items:center;
+  min-width:170px;height:1.15em;background:rgba(0,0,0,.18);
+  border-radius:4px;overflow:hidden}
+.dl-prog-bar{position:absolute;left:0;top:0;height:100%;
+  background:rgba(255,255,255,.32);border-radius:4px;
+  transition:width .12s linear}
+.dl-prog-label{position:relative;z-index:1;font-size:.8rem;
+  white-space:nowrap;padding:0 8px;letter-spacing:.01em}
+
+/* ── Add-source dialog ── */
+.dlg-box{max-width:500px;padding:28px}
+.dlg-title{font-size:1.05rem;font-weight:700;margin-bottom:18px;
+  display:flex;align-items:center;gap:8px}
+.dlg-label{font-size:.82rem;color:var(--muted);margin-bottom:7px;display:block}
+.dlg-input{width:100%;padding:10px 14px;
+  background:var(--input-bg);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:.9rem;outline:none;
+  transition:border-color var(--transition)}
+.dlg-input:focus{border-color:var(--border-strong)}
+.dlg-input::placeholder{color:var(--muted)}
+.dlg-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.preview-box{margin-top:16px;padding:14px;background:var(--tag-bg);
+  border:1px solid var(--border);border-radius:8px;display:none}
+.preview-box.show{display:block}
+.preview-name{font-weight:600;font-size:.95rem;margin-bottom:4px}
+.preview-count{font-size:.8rem;color:var(--muted)}
+.linked-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.linked-item{display:flex;align-items:center;gap:10px;font-size:.82rem}
+.linked-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--btn-primary-bg);flex-shrink:0}
+.linked-name{font-weight:600}
+.linked-url{color:var(--muted);font-size:.74rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+.linked-already{font-size:.72rem;color:#81c784;margin-left:auto;flex-shrink:0}
+.error-msg{color:var(--status-error-text);font-size:.82rem;margin-top:10px;display:none}
+.error-msg.show{display:block}
+
+/* ── Key / password dialog ── */
+.key-dlg-desc{font-size:.88rem;color:var(--text);margin-bottom:14px;line-height:1.5}
+
+/* ── Hints inside dialogs ── */
+.hint{font-size:.77rem;color:var(--muted);margin-top:6px}
+.hint code{background:var(--tag-bg);border:1px solid var(--border);
+  border-radius:4px;padding:1px 5px;font-size:.76rem;color:var(--text)}
+.hint-tip{margin-top:8px;padding:8px 10px;
+  background:var(--status-info-bg);border:1px solid var(--status-info-border);
+  border-radius:8px;color:var(--status-info-text)}
+.hint-fill-btn{color:var(--status-info-text);font-weight:700;
+  text-decoration:underline;text-underline-offset:2px}
+.hint-fill-btn:hover{opacity:.8}
+
+/* ── Spinner ── */
+.spinner{display:inline-block;width:16px;height:16px;
+  border:2px solid rgba(128,128,128,.35);border-top-color:currentColor;
+  border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
   </style>
 </head>
 <body>
@@ -443,8 +489,9 @@
   <div class="modal-box dlg-box">
     <div class="dlg-title">🔗 Add Library Source</div>
     <label class="dlg-label">Library base URL</label>
-    <input class="dlg-input" id="addUrl" placeholder="github:user/repo  or  https://raw.githubusercontent.com/user/repo/main  or  http://localhost:8080">
-    <p class="hint">Use <code>github:user/repo</code> as a shorthand, or paste the full URL to the folder containing <strong>lib.json</strong>.</p>
+    <input class="dlg-input" id="addUrl" placeholder="github:user/repo  ·  github:user/repo/subdir  ·  https://raw.githubusercontent.com/…">
+    <p class="hint">Use <code>github:user/repo</code> or <code>github:user/repo/subdir</code> as a shorthand, or paste the full URL to the folder containing <strong>lib.json</strong>.</p>
+    <p class="hint hint-tip">💡 New here? Add <a class="hint-fill-btn" href="#">github:Auchrio/OpenLibrary</a> to get started with a curated library index.</p>
     <div class="error-msg" id="addError"></div>
     <div class="preview-box" id="addPreview">
       <div class="preview-name" id="prevName"></div>
@@ -485,6 +532,7 @@
       <button class="bm-close" id="srcMgrClose">✕</button>
     </div>
     <div class="sources-modal-toolbar">
+      <button class="btn-secondary" id="srcRefreshBtn">🔄 Refresh</button>
       <button class="btn-secondary" id="srcExportBtn">⎘ Copy as JSON</button>
       <button class="btn-secondary" id="srcImportBtn">↑ Import JSON</button>
       <button class="btn-primary" id="btnAdd">+ Add New Source</button>
@@ -500,6 +548,16 @@
       </div>
     </div>
     <div id="srcList"></div>
+    <!-- Discovery panel: shown after refresh finds new linked libraries -->
+    <div class="src-discover-panel" id="srcDiscoverPanel">
+      <div class="src-panel-header">🔗 New Libraries Discovered</div>
+      <p class="src-discover-desc">These libraries were found via links in your current sources. Select which to add:</p>
+      <div class="linked-list" id="srcDiscoverList" style="padding:4px 16px 0"></div>
+      <div class="dlg-actions" style="padding:10px 16px 14px">
+        <button class="btn-secondary" id="srcDiscoverDismiss">Dismiss</button>
+        <button class="btn-primary" id="srcDiscoverAddBtn">Add Selected</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -507,7 +565,8 @@
 'use strict';
 
 // ═══════════════════════════════════════════════════════════════
-// CRYPTO — mirrors crypto.js / library.go parameters exactly
+// CRYPTO — mirrors library.go parameters exactly
+// AES-256-GCM with PBKDF2-SHA256 key derivation
 // ═══════════════════════════════════════════════════════════════
 const CRYPTO = {
   SALT_SIZE: 16, NONCE_SIZE: 12, ITERATIONS: 100000, KEY_SIZE: 256,
@@ -548,54 +607,105 @@ const CRYPTO = {
   }
 };
 
+'use strict';
+
 // ═══════════════════════════════════════════════════════════════
 // URL hash state  —  persists library source list client-side
+//
+// Hash format: pipe-separated raw source URLs, e.g.
+//   #github:owner/repo|https://example.com/lib
+// Names and passwords are stored in localStorage, keyed by raw URL.
+// Legacy base64-JSON hashes are transparently migrated on first load.
 // ═══════════════════════════════════════════════════════════════
-function b64enc(str) {
-  return btoa(unescape(encodeURIComponent(str)))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-}
 function b64dec(str) {
   str = str.replace(/-/g,'+').replace(/_/g,'/');
   while (str.length%4) str+='=';
   return decodeURIComponent(escape(atob(str)));
 }
+
+// ── Per-source metadata (name, password) stored in localStorage ──
+function _srcMetaKey(rawUrl) { return 'ol-src:' + rawUrl; }
+function _getMeta(rawUrl) {
+  try { return JSON.parse(localStorage.getItem(_srcMetaKey(rawUrl)) || 'null') || {}; } catch { return {}; }
+}
+function _setMeta(rawUrl, obj) {
+  try {
+    if (obj && (obj.name || obj.password))
+      localStorage.setItem(_srcMetaKey(rawUrl), JSON.stringify(obj));
+    else
+      localStorage.removeItem(_srcMetaKey(rawUrl));
+  } catch {}
+}
+function _delMeta(rawUrl) {
+  try { localStorage.removeItem(_srcMetaKey(rawUrl)); } catch {}
+}
+
 function loadSources() {
   const h = location.hash.slice(1);
   if (!h) return [];
-  try { return JSON.parse(b64dec(h)); } catch { return []; }
-}
-function saveSources(arr) {
-  history.replaceState(null,'','#'+b64enc(JSON.stringify(arr)));
+  // ── Legacy: base64-JSON format (auto-migrate) ──
+  try {
+    const arr = JSON.parse(b64dec(h));
+    if (Array.isArray(arr)) {
+      setTimeout(() => saveSources(arr), 0);
+      return arr;
+    }
+  } catch {}
+  // ── New format: pipe-separated raw URLs ──
+  // A literal '|' inside a URL must be encoded as %7C
+  return h.split('|').filter(Boolean).map(seg => {
+    const rawUrl = seg.replace(/%7C/gi, '|');
+    const meta = _getMeta(rawUrl);
+    return { url: rawUrl, name: meta.name || rawUrl,
+             ...(meta.password ? { password: meta.password } : {}) };
+  });
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Library loader
-// ═══════════════════════════════════════════════════════════════
-// state.sources  = [{url, name}]
-// state.libs     = Map<url, {lib.json obj, books: Map<id, entry>}>
-// state.books    = [] (flat sorted/filtered view)
+function saveSources(arr) {
+  // Write human-readable pipe-separated raw URLs to the hash
+  const hash = arr.map(s => s.url.replace(/\|/g, '%7C')).join('|');
+  history.replaceState(null, '', '#' + hash);
+  // Persist names and passwords in localStorage
+  arr.forEach(s => _setMeta(s.url, { name: s.name, password: s.password }));
+}
+
+// ── Normalise URL — expand shorthands for network use only ──
+// The raw/shorthand form is always what gets stored.
+function normaliseUrl(url) {
+  url = url.trim();
+  // github:owner/repo            →  …/owner/repo/refs/heads/main
+  // github:owner/repo/some/path  →  …/owner/repo/refs/heads/main/some/path
+  const ghMatch = url.match(/^github:([A-Za-z0-9_.-]+\/[A-Za-z0-9_.\-]+)(\/.*)?$/i);
+  if (ghMatch) {
+    const subpath = (ghMatch[2] || '').replace(/\/+$/, '');
+    url = `https://raw.githubusercontent.com/${ghMatch[1]}/refs/heads/main${subpath}`;
+  }
+  return url.replace(/\/+$/, '');
+}
+
+// ── Application state ──
+// sources  = [{url, name, password?}]
+// libs     = Map<normalisedUrl, {name, encryption_type, links, books: Map<id, entry>}>
+// books    = [] (flat merged view)
+// filtered = [] (after search + sort)
 const state = {
   sources: loadSources(),
-  libs: new Map(),     // url → {name, encryption_type, links, books: Map}
-  books: [],           // all books flat
-  filtered: [],        // after search+sort
+  libs: new Map(),
+  books: [],
+  filtered: [],
   page: 1,
-  perPage: 20,
+  perPage: 4, // recalculated dynamically as getGridColumns() * 5
   search: '',
   sort: 'series',
   coverCache: new Map() // bookId → objectURL
 };
 
-function normaliseUrl(url) {
-  url = url.trim();
-  // github:owner/repo  →  https://raw.githubusercontent.com/owner/repo/refs/heads/main
-  const ghMatch = url.match(/^github:([A-Za-z0-9_.-]+\/[A-Za-z0-9_.\-]+?)\/?$/i);
-  if (ghMatch) {
-    url = `https://raw.githubusercontent.com/${ghMatch[1]}/refs/heads/main`;
-  }
-  return url.replace(/\/+$/, '');
-}
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+// Library loader — fetches, decrypts and indexes lib.json files
+// Depends on: crypto.js, state.js
+// ═══════════════════════════════════════════════════════════════
 
 async function fetchLib(url) {
   const res = await fetch(url+'/lib.json', { cache:'no-cache' });
@@ -615,27 +725,31 @@ async function loadLibrary(url) {
   url = normaliseUrl(url);
   const src = state.sources.find(s => normaliseUrl(s.url) === url);
   const libJson = await fetchLib(url);
-  let password;
-  if (libJson.encryption_type === 0) {
-    password = '0';
-  } else if (src?.password) {
-    password = src.password;
-  } else {
-    throw new Error('Library requires a password — remove and re-add the source to enter one.');
+  let bookMap = new Map();
+  // An index-less lib (links-only) has no `index` field — skip decryption entirely.
+  if (libJson.index) {
+    let password;
+    if (libJson.encryption_type === 0) {
+      password = '0';
+    } else if (src?.password) {
+      password = src.password;
+    } else {
+      throw new Error('Library requires a password — remove and re-add the source to enter one.');
+    }
+    const books = await decryptIndex(libJson, password);
+    bookMap = new Map(Object.entries(books));
   }
-  const books = await decryptIndex(libJson, password);
-  const bookMap = new Map(Object.entries(books));
   state.libs.set(url, {
     name: libJson.name || url,
     encryption_type: libJson.encryption_type,
-    links: libJson.links || {},
+    links: libJson.links || [],
     books: bookMap
   });
   rebuildBookList();
-  return { name: libJson.name, links: libJson.links || {}, bookCount: bookMap.size };
+  return { name: libJson.name, links: libJson.links || [], bookCount: bookMap.size };
 }
 
-// Build a flat array of per-format download descriptors for one raw book.
+// ── Build a flat array of per-format download descriptors for one raw book ──
 function buildFormatEntries(book) {
   const e = book.entry;
   const formats = e.formats || [];
@@ -660,7 +774,7 @@ function buildFormatEntries(book) {
   });
 }
 
-// Merge raw books that share (title, author, series) into a single UI record.
+// ── Merge raw books that share (title, author, series) into a single UI record ──
 function mergeBooks(rawBooks) {
   const merged = new Map();
   for (const book of rawBooks) {
@@ -730,9 +844,14 @@ function applyFilter() {
   renderAll();
 }
 
+'use strict';
+
 // ═══════════════════════════════════════════════════════════════
-// Rendering
+// Rendering — DOM updates for the book grid, source chips,
+// pagination, and lazy cover loading
+// Depends on: crypto.js, state.js, library.js
 // ═══════════════════════════════════════════════════════════════
+
 function renderAll() {
   renderChips();
   renderGrid();
@@ -766,11 +885,14 @@ function renderChips() {
       const url = normaliseUrl(src.url);
       const lib = state.libs.get(url);
       const name = lib ? lib.name : src.name || src.url;
-      const isLoading = !lib && state.sources.find(s => normaliseUrl(s.url) === url);
 
       let countHtml;
       if (lib) {
-        countHtml = `<span class="src-count-badge">${lib.books.size} book${lib.books.size!==1?'s':''}</span>`;
+        const bc = lib.books.size;
+        const lc = (lib.links || []).length;
+        const bPart = `<span class="src-count-badge">${bc} book${bc!==1?'s':''}</span>`;
+        const lPart = lc ? `<span class="src-count-badge">${lc} link${lc!==1?'s':''}</span>` : '';
+        countHtml = bPart + lPart;
       } else {
         countHtml = `<span class="src-count-loading">loading…</span>`;
       }
@@ -792,7 +914,7 @@ function renderChips() {
     }
   }
 
-  // Update button label
+  // Update header button label
   const n = state.sources.length;
   document.getElementById('srcBtnLabel').textContent =
     n === 0 ? '📚 Sources' : `📚 Sources (${n})`;
@@ -814,8 +936,24 @@ function renderChips() {
   });
 }
 
+// ── Returns the number of columns currently rendered in the book grid ──
+function getGridColumns() {
+  const grid = document.getElementById('bookGrid');
+  if (!grid) return 4;
+  const tpl = getComputedStyle(grid).gridTemplateColumns;
+  if (tpl && tpl !== 'none' && /\d/.test(tpl)) {
+    const cols = tpl.trim().split(/\s+/).length;
+    if (cols > 0) return cols;
+  }
+  // Fallback: estimate from content width (24px padding each side, 18px gap, 160px min card)
+  const w = (grid.clientWidth || window.innerWidth) - 48;
+  return Math.max(1, Math.floor((w + 18) / (160 + 18)));
+}
+
 function renderGrid() {
   const grid = document.getElementById('bookGrid');
+  // Always show 5 complete rows regardless of column count
+  state.perPage = getGridColumns() * 5;
   grid.innerHTML = '';
   const start = (state.page-1)*state.perPage;
   const page = state.filtered.slice(start, start+state.perPage);
@@ -823,7 +961,6 @@ function renderGrid() {
     const card = makeCard(book);
     grid.appendChild(card);
   }
-  // Kick off IntersectionObserver for lazy cover loading
   observeCovers();
 }
 
@@ -845,7 +982,6 @@ function makeCard(book) {
       ${e.series ? `<div class="book-series">${esc(e.series)} #${+(e.series_index||0)}</div>` : ''}
     </div>
   `;
-  // If cover already cached, show immediately
   if (state.coverCache.has(book.id)) {
     replaceCoverPlaceholder(card, state.coverCache.get(book.id));
   }
@@ -853,7 +989,7 @@ function makeCard(book) {
   return card;
 }
 
-// Lazy cover loading via IntersectionObserver
+// ── Lazy cover loading via IntersectionObserver ──
 let coverObserver = null;
 function observeCovers() {
   if (coverObserver) coverObserver.disconnect();
@@ -871,7 +1007,6 @@ function observeCovers() {
 
 async function loadCover(bookId) {
   if (state.coverCache.has(bookId)) return;
-  // Find book
   const book = state.filtered.find(b => b.id===bookId)
     || state.books.find(b => b.id===bookId);
   if (!book || !book.entry.source_cover) return;
@@ -886,13 +1021,13 @@ async function loadCover(bookId) {
     const mime = detectImageMime(plain);
     const url = URL.createObjectURL(new Blob([plain], { type: mime }));
     state.coverCache.set(bookId, url);
-    // Update all card placeholders on current page
+    // Update card placeholder on current page
     const ph = document.getElementById('cp-'+bookId);
     if (ph) {
       const card = ph.closest('.book-card');
       if (card) replaceCoverPlaceholder(card, url);
     }
-    // Also update the book modal if open
+    // Update book modal if it's showing this book
     const bmImg = document.getElementById('bmCoverImg');
     if (bmImg && bmImg.dataset.bookId === bookId) {
       bmImg.src = url;
@@ -937,7 +1072,7 @@ function renderPagination() {
   };
   pg.appendChild(mkBtn('←', cur-1, false, cur===1));
 
-  // always show first, last, and up to 3 around current
+  // Always show first, last, and up to 2 pages on either side of current
   const pages = new Set([1, total]);
   for (let i=Math.max(1,cur-2); i<=Math.min(total,cur+2); i++) pages.add(i);
   let prev = 0;
@@ -949,13 +1084,17 @@ function renderPagination() {
   pg.appendChild(mkBtn('→', cur+1, false, cur===total));
 }
 
+'use strict';
+
 // ═══════════════════════════════════════════════════════════════
-// Book detail modal
+// Book detail modal — display, cover, download, reader link
+// Depends on: crypto.js, state.js, render.js
 // ═══════════════════════════════════════════════════════════════
+
 function openBookModal(book) {
   const e = book.entry;
-  // Guard: if the modal elements are missing (e.g. stale cached HTML served
-  // without the current markup), bail out rather than throwing an unhandled error.
+  // Guard: if the modal elements are missing (e.g. stale cached HTML),
+  // bail out rather than throwing an unhandled error.
   if (!document.getElementById('bmTitle')) {
     console.error(
       '[OpenLibrary] openBookModal: modal elements not found in DOM. ' +
@@ -974,12 +1113,9 @@ function openBookModal(book) {
       `${e.series} #${+(e.series_index||0)}`;
   } else { seriesRow.style.display = 'none'; }
 
-  // Unique formats across all sources
   const uniqueFormats = [...new Set(book.formatEntries.map(fe => fe.format))];
   document.getElementById('bmFormats').textContent = uniqueFormats.join(', ') || '—';
 
-
-  // Source label in header tag
   const srcNames = [...new Set(book.formatEntries.map(fe => fe.libName))];
   document.getElementById('bmSource').textContent = srcNames.join(' · ');
 
@@ -988,7 +1124,6 @@ function openBookModal(book) {
   const ph = document.getElementById('bmCoverPh');
   ph.textContent = (e.title||'?')[0].toUpperCase();
   ph.style.display = 'flex';
-  // Remove old img if present
   const oldImg = bmCoverEl.querySelector('img');
   if (oldImg) oldImg.remove();
   if (state.coverCache.has(book.id)) {
@@ -1002,17 +1137,26 @@ function openBookModal(book) {
     img.id = 'bmCoverImg'; img.dataset.bookId = book.id;
     img.alt='cover'; img.className='bm-cover-ph'; img.style.display='none';
     bmCoverEl.appendChild(img);
-    loadCover(book.id); // async, will update when ready
+    loadCover(book.id); // async, updates when ready
   }
 
-  // Download buttons — one per formatEntry, labelled with source when merged
+  // Download buttons — deduplicate across sources by format+filesize
   const btns = document.getElementById('bmDlButtons');
+  const seen = new Map(); // "format:filesize" → true
+  const dedupedEntries = book.formatEntries.filter(fe => {
+    if (!fe.filesize) return true; // can't tell — keep all
+    const key = `${fe.format}:${fe.filesize}`;
+    if (seen.has(key)) return false;
+    seen.set(key, true);
+    return true;
+  });
+
   btns.innerHTML = '';
-  if (book.formatEntries.length === 0) {
+  if (dedupedEntries.length === 0) {
     btns.innerHTML = '<span style="color:var(--muted);font-size:.82rem">No downloadable formats found.</span>';
   } else {
     // Read Online first
-    for (const fe of book.formatEntries) {
+    for (const fe of dedupedEntries) {
       if (fe.format === 'epub' && fe.sourceFile) {
         const readBtn = document.createElement('a');
         readBtn.className = 'btn-dl btn-read';
@@ -1024,7 +1168,7 @@ function openBookModal(book) {
       }
     }
     // Download buttons
-    for (const fe of book.formatEntries) {
+    for (const fe of dedupedEntries) {
       const btn = document.createElement('button');
       btn.className = 'btn-dl';
       const fmtLabel = fe.format.toUpperCase();
@@ -1085,10 +1229,8 @@ async function downloadBook(fe, entry, btn) {
       chunks.push(value);
       received += value.length;
       if (hasLength) {
-        // Reserve last 10% for decrypt phase
         const pct = Math.round((received / contentLength) * 88);
-        setProgress(pct,
-          `${CRYPTO.formatBytes(received)} / ${CRYPTO.formatBytes(contentLength)}`);
+        setProgress(pct, `${CRYPTO.formatBytes(received)} / ${CRYPTO.formatBytes(contentLength)}`);
       } else {
         setProgress(15, `Downloading ${CRYPTO.formatBytes(received)}…`);
       }
@@ -1120,267 +1262,162 @@ async function downloadBook(fe, entry, btn) {
   }
 }
 
+'use strict';
+
 // ═══════════════════════════════════════════════════════════════
-// Source management
+// Source management — add/remove sources, add-source dialog,
+// sources manager overlay, key/password prompt
+// Depends on: state.js, library.js, render.js
 // ═══════════════════════════════════════════════════════════════
-function removeSource(url) {
-  url = normaliseUrl(url);
+
+function removeSource(rawUrl) {
+  const url = normaliseUrl(rawUrl);
+  // Clean up localStorage metadata
+  state.sources.filter(s => normaliseUrl(s.url) === url).forEach(s => _delMeta(s.url));
   state.sources = state.sources.filter(s => normaliseUrl(s.url) !== url);
-  state.libs.delete(url);
-  // Clean up cover cache for books from this lib
-  for (const [id, _] of (state.libs.get(url)||{books:new Map()}).books||[]) {
-    const cached = state.coverCache.get(id);
-    if (cached) { URL.revokeObjectURL(cached); state.coverCache.delete(id); }
+  const lib = state.libs.get(url);
+  if (lib) {
+    for (const [id] of lib.books) {
+      const cached = state.coverCache.get(id);
+      if (cached) { URL.revokeObjectURL(cached); state.coverCache.delete(id); }
+    }
   }
+  state.libs.delete(url);
   saveSources(state.sources);
   rebuildBookList();
   renderAll();
 }
 
-async function addSource(url, name, password) {
-  url = normaliseUrl(url);
+async function addSource(rawUrl, name, password) {
+  // normaliseUrl only for network/dedup; rawUrl is what gets stored
+  const url = normaliseUrl(rawUrl);
   if (!state.sources.find(s => normaliseUrl(s.url) === url)) {
-    const src = { url, name: name || url };
+    const src = { url: rawUrl, name: name || rawUrl };
     if (password != null) src.password = password;
     state.sources.push(src);
     saveSources(state.sources);
     renderChips();
   }
   try {
-    const { name: realName, bookCount } = await loadLibrary(url);
-    // Update name in sources if we got a real one
+    const { name: realName } = await loadLibrary(url);
     const src = state.sources.find(s => normaliseUrl(s.url) === url);
     if (src) { src.name = realName || src.name; saveSources(state.sources); }
     renderAll();
   } catch(err) {
-    showStatus('Error loading '+url+': '+err.message, 'error');
+    showStatus('Error loading ' + rawUrl + ': ' + err.message, 'error');
     renderChips();
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Add-source dialog
+// Refresh & link discovery
 // ═══════════════════════════════════════════════════════════════
-let _pendingLib = null; // { url, name, links, bookCount }
 
-function openAddDialog() {
-  _pendingLib = null;
-  document.getElementById('addUrl').value = '';
-  document.getElementById('addError').classList.remove('show');
-  document.getElementById('addPreview').classList.remove('show');
-  document.getElementById('addPreviewBtn').style.display = '';
-  document.getElementById('addConfirmBtn').style.display = 'none';
-  document.getElementById('linkedContainer').style.display = 'none';
-  document.getElementById('addOverlay').classList.add('open');
-  setTimeout(() => document.getElementById('addUrl').focus(), 80);
-}
-
-function closeAddDialog() {
-  document.getElementById('addOverlay').classList.remove('open');
-}
-
-async function previewLibrary() {
-  const raw = document.getElementById('addUrl').value.trim();
-  if (!raw) return showAddError('Please enter a URL.');
-  const url = normaliseUrl(raw);
-  // If shorthand was expanded, reflect the resolved URL back into the input
-  if (url !== raw) document.getElementById('addUrl').value = url;
-  if (state.sources.find(s => normaliseUrl(s.url) === url)) {
-    return showAddError('This source is already in your library list.');
-  }
-  const btn = document.getElementById('addPreviewBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Fetching…';
-  document.getElementById('addError').classList.remove('show');
-  try {
-    const libJson = await fetchLib(url);
-    const encryptionType = libJson.encryption_type;
-    let bookCount = '?';
-    if (encryptionType === 0) {
-      try {
-        const idx = await decryptIndex(libJson, '0');
-        bookCount = Object.keys(idx).length;
-      } catch { bookCount = '?'; }
-    }
-    const links = libJson.links || {};
-    const linkEntries = Object.entries(links)
-      .filter(([,v]) => v && (v.link||v.url));
-
-    document.getElementById('prevName').textContent = libJson.name || url;
-    document.getElementById('prevCount').textContent = encryptionType !== 0
-      ? `🔐 Password required · type ${encryptionType}`
-      : `${bookCount} book${bookCount!==1?'s':''}  · type ${encryptionType}`;
-
-    const lc = document.getElementById('linkedContainer');
-    const ll = document.getElementById('linkedList');
-    ll.innerHTML = '';
-    if (linkEntries.length > 0) {
-      lc.style.display = 'block';
-      for (const [name, val] of linkEntries) {
-        const linkUrl = normaliseUrl(val.link || val.url || '');
-        const already = !!state.sources.find(s => normaliseUrl(s.url) === linkUrl);
-        const item = document.createElement('div');
-        item.className = 'linked-item';
-        item.innerHTML = `
-          <input type="checkbox" id="lnk-${esc(linkUrl)}" value="${esc(linkUrl)}" ${already?'disabled checked':''}>
-          <div>
-            <div class="linked-name">${esc(name)}</div>
-            <div class="linked-url">${esc(linkUrl)}</div>
-          </div>
-          ${already?'<span class="linked-already">✓ already added</span>':''}
-        `;
-        ll.appendChild(item);
+// Scan all loaded libs for links not yet in state.sources.
+// Returns a Map<normalisedUrl, rawUrl> of newly discovered libraries.
+// Cycle-safe: a URL already in state.sources is never returned.
+function _collectNewLinks() {
+  const existingNorm = new Set(state.sources.map(s => normaliseUrl(s.url)));
+  const discovered = new Map(); // normUrl → rawUrl (first seen wins)
+  for (const [, lib] of state.libs) {
+    for (const rawLink of (lib.links || [])) {
+      const normLink = normaliseUrl(String(rawLink));
+      if (!existingNorm.has(normLink) && !discovered.has(normLink)) {
+        discovered.set(normLink, String(rawLink));
       }
-    } else { lc.style.display = 'none'; }
-
-    document.getElementById('addPreview').classList.add('show');
-    document.getElementById('addConfirmBtn').style.display = '';
-    document.getElementById('addPreviewBtn').style.display = 'none';
-    _pendingLib = { url, name: libJson.name||url, links: linkEntries, encryptionType, libJson };
-  } catch(err) {
-    showAddError('Could not load library: '+err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = 'Preview';
+    }
   }
+  return discovered;
 }
 
-async function confirmImport() {
-  if (!_pendingLib) return;
-  // If the library needs a password, close the add dialog and open the key prompt.
-  // The key prompt handler is responsible for actually adding the source.
-  if (_pendingLib.encryptionType !== 0) {
-    closeAddDialog();
-    openKeyPrompt();
+async function refreshAllSources() {
+  if (state.sources.length === 0) {
+    showStatus('No sources to refresh.', 'info');
     return;
   }
-  closeAddDialog();
-  // Add primary source (no password needed)
-  await addSource(_pendingLib.url, _pendingLib.name);
-  // Add checked linked sources
-  document.querySelectorAll('#linkedList input[type=checkbox]:checked:not(:disabled)').forEach(cb => {
-    const linkUrl = cb.value;
-    const name = cb.closest('.linked-item').querySelector('.linked-name').textContent;
-    addSource(linkUrl, name);
-  });
-}
-
-// ── Key prompt (for password-protected libraries) ──────────────────────────
-function openKeyPrompt() {
-  document.getElementById('keyDlgDesc').textContent =
-    `"${_pendingLib.name}" is password-protected. Enter the decryption password to unlock it.`;
-  document.getElementById('keyInput').value = '';
-  document.getElementById('keyError').classList.remove('show');
-  document.getElementById('keyOverlay').classList.add('open');
-  setTimeout(() => document.getElementById('keyInput').focus(), 80);
-}
-
-function closeKeyPrompt() {
-  document.getElementById('keyOverlay').classList.remove('open');
-}
-
-async function tryUnlockKey() {
-  if (!_pendingLib) return;
-  const password = document.getElementById('keyInput').value;
-  if (!password) { showKeyError('Please enter a password.'); return; }
-
-  const btn = document.getElementById('keyUnlockBtn');
+  const btn = document.getElementById('srcRefreshBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Checking…';
-  document.getElementById('keyError').classList.remove('show');
-  try {
-    // Validate the password before touching state
-    const idx = await decryptIndex(_pendingLib.libJson, password);
-    const bookCount = Object.keys(idx).length;
-    // Password is good — now persist and load
-    closeKeyPrompt();
-    await addSource(_pendingLib.url, _pendingLib.name, password);
-    // Add any checked linked sources (they'll ask for their own key if needed)
-    document.querySelectorAll('#linkedList input[type=checkbox]:checked:not(:disabled)').forEach(cb => {
-      const linkUrl = cb.value;
-      const name = cb.closest('.linked-item').querySelector('.linked-name').textContent;
-      addSource(linkUrl, name);
-    });
-    showStatus(`"${_pendingLib.name}" unlocked — ${bookCount} book${bookCount!==1?'s':''} loaded.`, 'info');
-  } catch {
-    showKeyError('Incorrect password — decryption failed. Please try again.');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = 'Unlock';
-  }
-}
+  btn.innerHTML = '<span class="spinner"></span> Refreshing…';
 
-function showKeyError(msg) {
-  const el = document.getElementById('keyError');
-  el.textContent = msg;
-  el.classList.add('show');
-}
+  // Hide any previous discovery panel
+  document.getElementById('srcDiscoverPanel').classList.remove('show');
 
-function showAddError(msg) {
-  const el = document.getElementById('addError');
-  el.textContent = msg; el.classList.add('show');
-}
+  showStatus(`Refreshing ${state.sources.length} source${state.sources.length > 1 ? 's' : ''}…`, 'info', 0);
 
-// ═══════════════════════════════════════════════════════════════
-// Status banner
-// ═══════════════════════════════════════════════════════════════
-let _statusTimer = null;
-function showStatus(msg, type='info', duration=5000) {
-  const el = document.getElementById('statusBanner');
-  el.textContent = msg;
-  el.className = 'status-banner show ' + type;
-  clearTimeout(_statusTimer);
-  if (duration > 0) _statusTimer = setTimeout(() => el.classList.remove('show'), duration);
-}
+  const results = await Promise.allSettled(
+    state.sources.map(s => loadLibrary(normaliseUrl(s.url)))
+  );
 
-// ═══════════════════════════════════════════════════════════════
-// Utilities
-// ═══════════════════════════════════════════════════════════════
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Theme management
-// ═══════════════════════════════════════════════════════════════
-function applyTheme(val) {
-  if (val === 'light' || val === 'dark' || val === 'sepia') {
-    document.documentElement.dataset.theme = val;
+  const errors = results.filter(r => r.status === 'rejected').map(r => r.reason.message);
+  if (errors.length) {
+    showStatus(`Refresh done — ${errors.length} error(s): ${errors.join('; ')}`, 'error');
   } else {
-    delete document.documentElement.dataset.theme;
+    showStatus('All sources refreshed.', 'info', 3000);
   }
-  const sel = document.getElementById('themeSelect');
-  if (sel) sel.value = val;
-  try { localStorage.setItem('ol-theme', val); } catch {}
+
+  renderAll();
+
+  // Discover any new linked libraries (loop-safe: only shows URL not already loaded)
+  const newLinks = _collectNewLinks();
+  if (newLinks.size > 0) {
+    _showDiscoverPanel(newLinks);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🔄 Refresh';
 }
-// Apply before first paint to avoid flash
-(function() {
-  let saved = 'auto';
-  try { saved = localStorage.getItem('ol-theme') || 'auto'; } catch {}
-  applyTheme(saved);
-})();
 
-// ═══════════════════════════════════════════════════════════════
-// Event wiring
-// ═══════════════════════════════════════════════════════════════
-document.getElementById('themeSelect').addEventListener('change', e => applyTheme(e.target.value));
+function _showDiscoverPanel(newLinks) {
+  const panel = document.getElementById('srcDiscoverPanel');
+  const list = document.getElementById('srcDiscoverList');
+  list.innerHTML = '';
 
-// ═══════════════════════════════════════════════════════════════
-// Sources manager (full-screen overlay)
-// ═══════════════════════════════════════════════════════════════
+  for (const [normUrl, rawUrl] of newLinks) {
+    const item = document.createElement('div');
+    item.className = 'linked-item';
+    item.innerHTML = `
+      <input type="checkbox" id="disc-${esc(normUrl)}" value="${esc(rawUrl)}" checked>
+      <div style="min-width:0">
+        <div class="linked-name">${esc(rawUrl)}</div>
+        <div class="linked-url">${esc(normUrl !== rawUrl ? normUrl : '')}</div>
+      </div>
+    `;
+    list.appendChild(item);
+  }
+
+  panel.classList.add('show');
+  // Scroll the list body so the panel is visible
+  const srcList = document.getElementById('srcList');
+  setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
 function openSourcesManager() {
   document.getElementById('sourcesOverlay').classList.add('open');
 }
 function closeSourcesManager() {
   document.getElementById('sourcesOverlay').classList.remove('open');
   document.getElementById('srcImportPanel').classList.remove('show');
+  document.getElementById('srcDiscoverPanel').classList.remove('show');
   document.getElementById('srcImportTa').value = '';
   document.getElementById('srcImportError').classList.remove('show');
 }
 
 document.getElementById('btnSources').addEventListener('click', openSourcesManager);
 document.getElementById('srcMgrClose').addEventListener('click', closeSourcesManager);
+document.getElementById('srcRefreshBtn').addEventListener('click', refreshAllSources);
+
+document.getElementById('srcDiscoverDismiss').addEventListener('click', () => {
+  document.getElementById('srcDiscoverPanel').classList.remove('show');
+});
+
+document.getElementById('srcDiscoverAddBtn').addEventListener('click', () => {
+  const panel = document.getElementById('srcDiscoverPanel');
+  const checked = panel.querySelectorAll('input[type=checkbox]:checked');
+  if (checked.length === 0) { panel.classList.remove('show'); return; }
+  panel.classList.remove('show');
+  checked.forEach(cb => {
+    addSource(cb.value);
+  });
+});
 
 document.getElementById('srcExportBtn').addEventListener('click', () => {
   const json = JSON.stringify(state.sources, null, 2);
@@ -1422,10 +1459,11 @@ document.getElementById('srcImportConfirm').addEventListener('click', () => {
   const newSources = [];
   for (const item of parsed) {
     if (!item.url) continue;
-    const url = normaliseUrl(item.url);
-    if (!state.sources.find(s => normaliseUrl(s.url) === url)) {
-      state.sources.push({ url, name: item.name || url });
-      newSources.push({ url, name: item.name || url });
+    const rawItemUrl = item.url;
+    const normUrl = normaliseUrl(rawItemUrl);
+    if (!state.sources.find(s => normaliseUrl(s.url) === normUrl)) {
+      state.sources.push({ url: rawItemUrl, name: item.name || rawItemUrl });
+      newSources.push({ url: rawItemUrl, name: item.name || rawItemUrl });
     }
   }
   saveSources(state.sources);
@@ -1443,13 +1481,230 @@ document.getElementById('srcImportConfirm').addEventListener('click', () => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// Add-source dialog
+// ═══════════════════════════════════════════════════════════════
+let _pendingLib = null; // { url, name, links, encryptionType, libJson }
+
+function openAddDialog() {
+  _pendingLib = null;
+  document.getElementById('addUrl').value = '';
+  document.getElementById('addError').classList.remove('show');
+  document.getElementById('addPreview').classList.remove('show');
+  document.getElementById('addPreviewBtn').style.display = '';
+  document.getElementById('addConfirmBtn').style.display = 'none';
+  document.getElementById('linkedContainer').style.display = 'none';
+  document.getElementById('addOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('addUrl').focus(), 80);
+}
+
+function closeAddDialog() {
+  document.getElementById('addOverlay').classList.remove('open');
+}
+
+async function previewLibrary() {
+  const raw = document.getElementById('addUrl').value.trim();
+  if (!raw) return showAddError('Please enter a URL.');
+  const url = normaliseUrl(raw);
+  if (state.sources.find(s => normaliseUrl(s.url) === url)) {
+    return showAddError('This source is already in your library list.');
+  }
+  const btn = document.getElementById('addPreviewBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Fetching…';
+  document.getElementById('addError').classList.remove('show');
+  try {
+    const libJson = await fetchLib(url);
+    const encryptionType = libJson.encryption_type;
+    let bookCount = 0;
+    if (!libJson.index) {
+      bookCount = 0;
+    } else if (encryptionType === 0) {
+      try {
+        const idx = await decryptIndex(libJson, '0');
+        bookCount = Object.keys(idx).length;
+      } catch { bookCount = '?'; }
+    } else {
+      bookCount = '🔐';
+    }
+    const links = libJson.links || [];
+    // Support both new array format ["url"] and legacy {name: {link/url}} object format
+    let linkEntries; // [{rawUrl, label}]
+    if (Array.isArray(links)) {
+      linkEntries = links.map(u => ({ rawUrl: String(u), label: String(u) }));
+    } else {
+      linkEntries = Object.entries(links)
+        .filter(([,v]) => v && (v.link||v.url))
+        .map(([name, v]) => ({ rawUrl: v.link || v.url, label: name }));
+    }
+    linkEntries = linkEntries.filter(e => e.rawUrl);
+
+    document.getElementById('prevName').textContent = libJson.name || url;
+    document.getElementById('prevCount').textContent = encryptionType !== 0 && libJson.index
+      ? `🔐 Password required · type ${encryptionType}`
+      : `${bookCount} book${bookCount!==1?'s':''}${linkEntries.length ? ` · ${linkEntries.length} link${linkEntries.length!==1?'s':''}` : ''}`;
+
+    const lc = document.getElementById('linkedContainer');
+    const ll = document.getElementById('linkedList');
+    ll.innerHTML = '';
+    if (linkEntries.length > 0) {
+      lc.style.display = 'block';
+      for (const { rawUrl, label } of linkEntries) {
+        const linkUrl = normaliseUrl(rawUrl);
+        const already = !!state.sources.find(s => normaliseUrl(s.url) === linkUrl);
+        const item = document.createElement('div');
+        item.className = 'linked-item';
+        item.innerHTML = `
+          <input type="checkbox" id="lnk-${esc(linkUrl)}" value="${esc(rawUrl)}" ${already ? 'disabled checked' : 'checked'}>
+          <div>
+            <div class="linked-name">${esc(label)}</div>
+            <div class="linked-url">${esc(rawUrl)}</div>
+          </div>
+          ${already ? '<span class="linked-already">✓ already added</span>' : ''}
+        `;
+        ll.appendChild(item);
+      }
+    } else { lc.style.display = 'none'; }
+
+    document.getElementById('addPreview').classList.add('show');
+    document.getElementById('addConfirmBtn').style.display = '';
+    document.getElementById('addPreviewBtn').style.display = 'none';
+    _pendingLib = { url: raw, name: libJson.name||raw, links: linkEntries, encryptionType, libJson };
+  } catch(err) {
+    showAddError('Could not load library: '+err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Preview';
+  }
+}
+
+async function confirmImport() {
+  if (!_pendingLib) return;
+  if (_pendingLib.encryptionType !== 0) {
+    closeAddDialog();
+    openKeyPrompt();
+    return;
+  }
+  closeAddDialog();
+  await addSource(_pendingLib.url, _pendingLib.name);
+  document.querySelectorAll('#linkedList input[type=checkbox]:checked:not(:disabled)').forEach(cb => {
+    const linkUrl = cb.value;
+    const name = cb.closest('.linked-item').querySelector('.linked-name').textContent;
+    addSource(linkUrl, name);
+  });
+}
+
+// ── Key prompt (for password-protected libraries) ──────────────────────────
+function openKeyPrompt() {
+  document.getElementById('keyDlgDesc').textContent =
+    `"${_pendingLib.name}" is password-protected. Enter the decryption password to unlock it.`;
+  document.getElementById('keyInput').value = '';
+  document.getElementById('keyError').classList.remove('show');
+  document.getElementById('keyOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('keyInput').focus(), 80);
+}
+
+function closeKeyPrompt() {
+  document.getElementById('keyOverlay').classList.remove('open');
+}
+
+async function tryUnlockKey() {
+  if (!_pendingLib) return;
+  const password = document.getElementById('keyInput').value;
+  if (!password) { showKeyError('Please enter a password.'); return; }
+
+  const btn = document.getElementById('keyUnlockBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Checking…';
+  document.getElementById('keyError').classList.remove('show');
+  try {
+    const idx = await decryptIndex(_pendingLib.libJson, password);
+    const bookCount = Object.keys(idx).length;
+    closeKeyPrompt();
+    await addSource(_pendingLib.url, _pendingLib.name, password);
+    document.querySelectorAll('#linkedList input[type=checkbox]:checked:not(:disabled)').forEach(cb => {
+      const linkUrl = cb.value;
+      const name = cb.closest('.linked-item').querySelector('.linked-name').textContent;
+      addSource(linkUrl, name);
+    });
+    showStatus(`"${_pendingLib.name}" unlocked — ${bookCount} book${bookCount!==1?'s':''} loaded.`, 'info');
+  } catch {
+    showKeyError('Incorrect password — decryption failed. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Unlock';
+  }
+}
+
+function showKeyError(msg) {
+  const el = document.getElementById('keyError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function showAddError(msg) {
+  const el = document.getElementById('addError');
+  el.textContent = msg; el.classList.add('show');
+}
+
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+// main.js — utilities, theme, event wiring, app init
+// Depends on: all other js/ modules
+// ═══════════════════════════════════════════════════════════════
+
+// ── Utilities ──
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+let _statusTimer = null;
+function showStatus(msg, type='info', duration=5000) {
+  const el = document.getElementById('statusBanner');
+  el.textContent = msg;
+  el.className = 'status-banner show ' + type;
+  clearTimeout(_statusTimer);
+  if (duration > 0) _statusTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ── Theme management ──
+function applyTheme(val) {
+  if (val === 'light' || val === 'dark' || val === 'sepia') {
+    document.documentElement.dataset.theme = val;
+  } else {
+    delete document.documentElement.dataset.theme;
+  }
+  const sel = document.getElementById('themeSelect');
+  if (sel) sel.value = val;
+  try { localStorage.setItem('ol-theme', val); } catch {}
+}
+// Apply saved theme before first paint to avoid flash
+(function() {
+  let saved = 'auto';
+  try { saved = localStorage.getItem('ol-theme') || 'auto'; } catch {}
+  applyTheme(saved);
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// Event wiring
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('themeSelect').addEventListener('change', e => applyTheme(e.target.value));
+
 document.getElementById('btnAdd').addEventListener('click', () => {
   closeSourcesManager();
   openAddDialog();
 });
 document.getElementById('addCancel').addEventListener('click', closeAddDialog);
+document.querySelector('.hint-fill-btn')?.addEventListener('click', e => {
+  e.preventDefault();
+  document.getElementById('addUrl').value = 'github:Auchrio/OpenLibrary';
+  document.getElementById('addUrl').focus();
+});
 document.getElementById('addPreviewBtn').addEventListener('click', previewLibrary);
 document.getElementById('addConfirmBtn').addEventListener('click', confirmImport);
+
 document.getElementById('bmClose').addEventListener('click', () => {
   document.getElementById('bookOverlay').classList.remove('open');
 });
@@ -1489,11 +1744,28 @@ document.getElementById('sortSelect').addEventListener('change', e => {
   applyFilter();
 });
 
+// Re-paginate when the window is resized and the column count changes
+;(function() {
+  let _cols = 0, _raf = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(_raf);
+    _raf = requestAnimationFrame(() => {
+      const cols = getGridColumns();
+      if (cols !== _cols) {
+        _cols = cols;
+        state.page = 1;
+        renderGrid();
+        renderPagination();
+      }
+    });
+  });
+})();
+
 // ═══════════════════════════════════════════════════════════════
-// Initialise — load all sources from hash
+// Initialise — load all sources from URL hash
 // ═══════════════════════════════════════════════════════════════
 (async function init() {
-  renderAll(); // show empty state / sources immediately
+  renderAll(); // show empty state / chips immediately
   if (state.sources.length === 0) return;
   showStatus(`Loading ${state.sources.length} source${state.sources.length>1?'s':''}…`, 'info', 0);
   const results = await Promise.allSettled(
@@ -1504,6 +1776,7 @@ document.getElementById('sortSelect').addEventListener('change', e => {
   else { document.getElementById('statusBanner').classList.remove('show'); }
   renderAll();
 })();
+
 </script>
 </body>
 </html>

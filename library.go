@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
@@ -17,6 +18,7 @@ import (
 	"image/png"
 	"io"
 	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -142,6 +144,31 @@ func compressCover(data []byte, mimeType string, maxDim, quality int) []byte {
 		return data
 	}
 	return out.Bytes()
+}
+
+// promptLine prints a prompt and returns trimmed user input from stdin.
+func promptLine(prompt string) string {
+	fmt.Print(prompt)
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	return strings.TrimSpace(scanner.Text())
+}
+
+// fetchLibraryIndexLinks fetches a lib.json from rawURL and returns its links slice.
+func fetchLibraryIndexLinks(rawURL string) ([]string, error) {
+	resp, err := http.Get(rawURL + "/lib.json")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	var lib LibJSON
+	if err := json.NewDecoder(resp.Body).Decode(&lib); err != nil {
+		return nil, err
+	}
+	return lib.Links, nil
 }
 
 // generateID returns a random UUID v4.
@@ -392,10 +419,10 @@ func parseEPUB(filePath string) (*BookMeta, error) {
 
 // LibJSON is the unencrypted outer shell of lib.json.
 type LibJSON struct {
-	Name           string                 `json:"name"`
-	EncryptionType int                    `json:"encryption_type"`
-	Links          map[string]interface{} `json:"links"`
-	Index          string                 `json:"index"` // base64(salt+nonce+ciphertext)
+	Name           string   `json:"name"`
+	EncryptionType int      `json:"encryption_type"`
+	Links          []string `json:"links"`
+	Index          string   `json:"index"` // base64(salt+nonce+ciphertext)
 }
 
 // IndexEntry is the per-book record stored in the encrypted index.
@@ -447,7 +474,7 @@ func main() {
 	existingIndex := map[string]IndexEntry{}
 	existingStems := map[string]bool{}
 	existingLibName := "OpenLibrary Datastore"
-	existingLinks := map[string]interface{}{}
+	existingLinks := []string{}
 
 	if raw, err := os.ReadFile(libPath); err == nil {
 		var oldLib LibJSON
@@ -471,8 +498,52 @@ func main() {
 			if oldLib.Name != "" {
 				existingLibName = oldLib.Name
 			}
-			if oldLib.Links != nil {
+			if len(oldLib.Links) > 0 {
 				existingLinks = oldLib.Links
+			}
+		}
+	}
+
+	// ── Interactive setup questions ──
+	// Library name
+	nameAnswer := promptLine(fmt.Sprintf("Library name [%s]: ", existingLibName))
+	if nameAnswer != "" {
+		existingLibName = nameAnswer
+	}
+
+	// Offer Library Index network inclusion (only if not already linked)
+	const libIndexShorthand = "github:Auchrio/OpenLibrary"
+	const libIndexRawURL = "https://raw.githubusercontent.com/Auchrio/OpenLibrary/refs/heads/main"
+	alreadyLinked := false
+	for _, l := range existingLinks {
+		if l == libIndexShorthand || strings.Contains(l, "Auchrio/OpenLibrary") {
+			alreadyLinked = true
+			break
+		}
+	}
+	if !alreadyLinked {
+		indexAnswer := promptLine("Include the Library Index network (github:Auchrio/OpenLibrary)? [y/N]: ")
+		if strings.ToLower(indexAnswer) == "y" || strings.ToLower(indexAnswer) == "yes" {
+			existingLinks = append(existingLinks, libIndexShorthand)
+			fmt.Println("Fetching Library Index links…")
+			fetchedLinks, fetchErr := fetchLibraryIndexLinks(libIndexRawURL)
+			if fetchErr != nil {
+				fmt.Fprintf(os.Stderr, "Warning: could not fetch Library Index links: %v\n", fetchErr)
+			} else {
+				// Build a dedup set from current links
+				linkSet := map[string]bool{}
+				for _, l := range existingLinks {
+					linkSet[l] = true
+				}
+				added := 0
+				for _, l := range fetchedLinks {
+					if !linkSet[l] {
+						linkSet[l] = true
+						existingLinks = append(existingLinks, l)
+						added++
+					}
+				}
+				fmt.Printf("Added %d link(s) from the Library Index.\n", added)
 			}
 		}
 	}
@@ -548,7 +619,21 @@ func main() {
 	}
 
 	if len(groups) == 0 {
-		fmt.Println("No EPUB books found in input directory.")
+		fmt.Println("No EPUB books found in input directory. Writing metadata only.")
+		// Still write lib.json so name/links changes are persisted
+		indexJSON, _ := json.MarshalIndent(existingIndex, "", "  ")
+		encIndex, encErr := encryptWithPassword(indexJSON, password)
+		if encErr == nil {
+			lib := LibJSON{
+				Name:           existingLibName,
+				EncryptionType: encType,
+				Links:          existingLinks,
+				Index:          base64.StdEncoding.EncodeToString(encIndex),
+			}
+			if libData, err := json.MarshalIndent(lib, "", "  "); err == nil {
+				os.WriteFile(filepath.Join(outputDir, "lib.json"), libData, 0644)
+			}
+		}
 		return
 	}
 
@@ -560,7 +645,22 @@ func main() {
 		}
 	}
 	if newCount == 0 {
-		fmt.Println("All books are already indexed. Nothing to do.")
+		fmt.Println("All books are already indexed. Writing updated metadata.")
+		// Still write lib.json so name/links changes are persisted
+		indexJSON, _ := json.MarshalIndent(existingIndex, "", "  ")
+		encIndex, encErr := encryptWithPassword(indexJSON, password)
+		if encErr == nil {
+			lib := LibJSON{
+				Name:           existingLibName,
+				EncryptionType: encType,
+				Links:          existingLinks,
+				Index:          base64.StdEncoding.EncodeToString(encIndex),
+			}
+			if libData, err := json.MarshalIndent(lib, "", "  "); err == nil {
+				os.WriteFile(filepath.Join(outputDir, "lib.json"), libData, 0644)
+				fmt.Printf("Library '%s' metadata updated.\n", lib.Name)
+			}
+		}
 		return
 	}
 	fmt.Printf("Building library (encryption_type %d): %d new book(s), %d already indexed.\n\n",
