@@ -10,6 +10,7 @@ header{
   background:linear-gradient(135deg,var(--logo-from),var(--logo-to));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .logo-icon{font-size:1.4rem}
+@media(max-width:460px){.logo-text{display:none}}
 .header-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
 
 /* ── Sources button (in header-actions) ── */

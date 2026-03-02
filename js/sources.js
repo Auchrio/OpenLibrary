@@ -100,7 +100,7 @@ async function refreshAllSources() {
   }
 
   btn.disabled = false;
-  btn.innerHTML = '🔄 Refresh';
+  btn.innerHTML = '↺ Refresh';
 }
 
 function _showDiscoverPanel(newLinks) {
