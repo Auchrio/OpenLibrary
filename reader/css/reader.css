@@ -360,6 +360,26 @@ a      { color: inherit; text-decoration: none; }
   line-height: 1.5;
 }
 .status-msg.error { color: #e57373; }
+.status-progress {
+  width: 240px;
+  height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.status-progress.hidden { display: none; }
+.status-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width .15s ease;
+}
+.status-progress-label {
+  font-size: .78rem;
+  color: var(--muted);
+  min-height: 1.1em;
+}
 
 /* ── EPUB iframe ── */
 .epub-frame {

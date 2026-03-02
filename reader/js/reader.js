@@ -698,6 +698,23 @@ function setStatus(msg, isError = false) {
   spinner.classList.toggle('hidden', isError);
   msgEl.textContent = msg;
   msgEl.className = 'status-msg' + (isError ? ' error' : '');
+  // Clear any progress bar when status changes
+  setFetchProgress(-1, '');
+}
+function setFetchProgress(pct, label) {
+  const bar   = document.getElementById('statusProgressBar');
+  const track = document.getElementById('statusProgress');
+  const lbl   = document.getElementById('statusProgressLabel');
+  if (!bar) return;
+  if (pct < 0) {
+    track.classList.add('hidden');
+    bar.style.width = '0%';
+    lbl.textContent = '';
+  } else {
+    track.classList.remove('hidden');
+    bar.style.width = pct + '%';
+    lbl.textContent = label;
+  }
 }
 function hideStatus() {
   document.getElementById('readerStatus').classList.add('hidden');
@@ -798,12 +815,36 @@ async function init() {
     setStatus('Fetching encrypted file…');
     const res = await fetch(params.src);
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    const enc = await res.arrayBuffer();
+
+    const contentLength = parseInt(res.headers.get('Content-Length') || '0', 10);
+    const hasLength = contentLength > 0;
+    const fmtBytes = n => n >= 1048576 ? (n/1048576).toFixed(1)+' MB'
+                        : n >= 1024    ? (n/1024).toFixed(0)+' KB'
+                        :                n+' B';
+
+    const reader = res.body.getReader();
+    const chunks = [];
+    let received = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+      if (hasLength) {
+        const pct = Math.round((received / contentLength) * 88);
+        setFetchProgress(pct, `${fmtBytes(received)} / ${fmtBytes(contentLength)}`);
+      } else {
+        setFetchProgress(15, `Downloading ${fmtBytes(received)}…`);
+      }
+    }
+    const enc = new Uint8Array(received);
+    let off = 0;
+    for (const chunk of chunks) { enc.set(chunk, off); off += chunk.length; }
 
     // 2. Decrypt
     setStatus('Decrypting…');
     const keyBuf = CRYPTO.hexToBuffer(params.key);
-    const plain  = await CRYPTO.decryptWithKey(enc, keyBuf);
+    const plain  = await CRYPTO.decryptWithKey(enc.buffer, keyBuf);
 
     // 3–8. Shared loading pipeline
     await loadEpub(plain.buffer, params.title);

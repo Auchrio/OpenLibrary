@@ -109,7 +109,7 @@ header{
   background:linear-gradient(135deg,var(--logo-from),var(--logo-to));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .logo-icon{font-size:1.4rem}
-@media(max-width:449px){.logo-text{display:none}}
+@media(max-width:460px){.logo-text{display:none}}
 .header-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
 
 /* ── Sources button (in header-actions) ── */
@@ -117,8 +117,10 @@ header{
   padding:7px 14px;background:var(--btn-secondary-bg);
   border:1px solid var(--btn-secondary-border);border-radius:8px;
   color:var(--text);font-size:.85rem;font-weight:600;white-space:nowrap;
-  transition:border-color var(--transition),background var(--transition)}
+  transition:border-color var(--transition),background var(--transition),color var(--transition)}
 .btn-sources:hover{background:var(--surface-raised);border-color:var(--border-strong)}
+.btn-sources.btn-sources--cta{background:var(--btn-primary-bg);border-color:transparent;color:var(--btn-primary-text)}
+.btn-sources.btn-sources--cta:hover{opacity:.85;background:var(--btn-primary-bg)}
 
 /* ── Theme selector & add button (in header-actions) ── */
 .theme-select{padding:7px 10px;background:var(--btn-secondary-bg);
@@ -249,6 +251,8 @@ select option{background:var(--modal-bg)}
   font-size:.72rem;font-weight:700;letter-spacing:.07em;
   text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
 .src-empty{padding:20px 16px;color:var(--muted);font-size:.85rem;text-align:center}
+.src-index-link{color:var(--muted);text-decoration:underline;font-weight:500}
+.src-index-link:hover{color:var(--text)}
 .src-row{
   display:grid;
   grid-template-columns:1fr auto;
@@ -422,8 +426,8 @@ select option{background:var(--modal-bg)}
         <option value="dark">🌙 Dark</option>
         <option value="sepia">📜 Sepia</option>
       </select>
-      <button class="btn-sources" id="btnSources">
-        <span id="srcBtnLabel">📚 Sources</span>
+      <button class="btn-sources btn-sources--cta" id="btnSources">
+        <span id="srcBtnLabel">+ Add Source</span>
       </button>
     </div>
   </div>
@@ -865,11 +869,20 @@ function renderAll() {
   const es = document.getElementById('emptyState');
   if (total===0 && state.sources.length===0) {
     es.classList.add('show');
+    es.querySelector('.empty-title').textContent = 'No library sources loaded';
     es.querySelector('.empty-sub').innerHTML =
-      'Click <strong>+ Add Source</strong> and enter a library URL to get started.';
+      'Click <strong>+ Add Source</strong> and enter a library URL to get started, or <a class="src-index-link empty-index-link" href="#">click here to add the library index immediately</a>.';
+    es.querySelector('.empty-index-link').addEventListener('click', e => {
+      e.preventDefault();
+      openAddDialog(true);
+      document.getElementById('addUrl').value = 'github:Auchrio/OpenLibrary';
+      document.getElementById('addUrl').focus();
+    });
   } else if (total===0 && state.sources.length>0) {
     es.classList.add('show');
-    es.querySelector('.empty-sub').textContent = 'Loading libraries…';
+    es.querySelector('.empty-title').textContent = 'No books found';
+    es.querySelector('.empty-sub').innerHTML =
+      'Your sources loaded but returned no books. Try clicking <strong>↺ Refresh</strong> in the Sources manager, or check that your library URLs are correct.';
   } else {
     es.classList.remove('show');
   }
@@ -880,7 +893,14 @@ function renderChips() {
   list.innerHTML = '';
 
   if (state.sources.length === 0) {
-    list.innerHTML = '<div class="src-empty">No sources added yet.</div>';
+    list.innerHTML = '<div class="src-empty">No sources added yet, <a class="src-index-link" href="#">click here to add the library index.</a></div>';
+    list.querySelector('.src-index-link').addEventListener('click', e => {
+      e.preventDefault();
+      closeSourcesManager();
+      openAddDialog(true);
+      document.getElementById('addUrl').value = 'github:Auchrio/OpenLibrary';
+      document.getElementById('addUrl').focus();
+    });
   } else {
     for (const src of state.sources) {
       const url = normaliseUrl(src.url);
@@ -917,8 +937,10 @@ function renderChips() {
 
   // Update header button label
   const n = state.sources.length;
+  const srcBtn = document.getElementById('btnSources');
   document.getElementById('srcBtnLabel').textContent =
-    n === 0 ? '📚 Sources' : `📚 Sources (${n})`;
+    n === 0 ? '+ Add Source' : `📚 Sources (${n})`;
+  srcBtn.classList.toggle('btn-sources--cta', n === 0);
 
   list.querySelectorAll('.src-btn').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -1487,7 +1509,7 @@ document.getElementById('srcImportConfirm').addEventListener('click', () => {
 // ═══════════════════════════════════════════════════════════════
 let _pendingLib = null; // { url, name, links, encryptionType, libJson }
 
-function openAddDialog() {
+function openAddDialog(hideHints = false) {
   _pendingLib = null;
   document.getElementById('addUrl').value = '';
   document.getElementById('addError').classList.remove('show');
@@ -1495,12 +1517,16 @@ function openAddDialog() {
   document.getElementById('addPreviewBtn').style.display = '';
   document.getElementById('addConfirmBtn').style.display = 'none';
   document.getElementById('linkedContainer').style.display = 'none';
+  document.querySelectorAll('#addOverlay .hint').forEach(el => {
+    el.style.display = hideHints ? 'none' : '';
+  });
   document.getElementById('addOverlay').classList.add('open');
   setTimeout(() => document.getElementById('addUrl').focus(), 80);
 }
 
 function closeAddDialog() {
   document.getElementById('addOverlay').classList.remove('open');
+  document.querySelectorAll('#addOverlay .hint').forEach(el => el.style.display = '');
 }
 
 async function previewLibrary() {

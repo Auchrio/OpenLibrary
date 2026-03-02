@@ -33,6 +33,8 @@
   font-size:.72rem;font-weight:700;letter-spacing:.07em;
   text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
 .src-empty{padding:20px 16px;color:var(--muted);font-size:.85rem;text-align:center}
+.src-index-link{color:var(--muted);text-decoration:underline;font-weight:500}
+.src-index-link:hover{color:var(--text)}
 .src-row{
   display:grid;
   grid-template-columns:1fr auto;

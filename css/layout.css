@@ -18,8 +18,10 @@ header{
   padding:7px 14px;background:var(--btn-secondary-bg);
   border:1px solid var(--btn-secondary-border);border-radius:8px;
   color:var(--text);font-size:.85rem;font-weight:600;white-space:nowrap;
-  transition:border-color var(--transition),background var(--transition)}
+  transition:border-color var(--transition),background var(--transition),color var(--transition)}
 .btn-sources:hover{background:var(--surface-raised);border-color:var(--border-strong)}
+.btn-sources.btn-sources--cta{background:var(--btn-primary-bg);border-color:transparent;color:var(--btn-primary-text)}
+.btn-sources.btn-sources--cta:hover{opacity:.85;background:var(--btn-primary-bg)}
 
 /* ── Theme selector & add button (in header-actions) ── */
 .theme-select{padding:7px 10px;background:var(--btn-secondary-bg);

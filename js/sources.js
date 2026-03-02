@@ -222,7 +222,7 @@ document.getElementById('srcImportConfirm').addEventListener('click', () => {
 // ═══════════════════════════════════════════════════════════════
 let _pendingLib = null; // { url, name, links, encryptionType, libJson }
 
-function openAddDialog() {
+function openAddDialog(hideHints = false) {
   _pendingLib = null;
   document.getElementById('addUrl').value = '';
   document.getElementById('addError').classList.remove('show');
@@ -230,12 +230,16 @@ function openAddDialog() {
   document.getElementById('addPreviewBtn').style.display = '';
   document.getElementById('addConfirmBtn').style.display = 'none';
   document.getElementById('linkedContainer').style.display = 'none';
+  document.querySelectorAll('#addOverlay .hint').forEach(el => {
+    el.style.display = hideHints ? 'none' : '';
+  });
   document.getElementById('addOverlay').classList.add('open');
   setTimeout(() => document.getElementById('addUrl').focus(), 80);
 }
 
 function closeAddDialog() {
   document.getElementById('addOverlay').classList.remove('open');
+  document.querySelectorAll('#addOverlay .hint').forEach(el => el.style.display = '');
 }
 
 async function previewLibrary() {

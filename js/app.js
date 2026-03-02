@@ -284,11 +284,20 @@ function renderAll() {
   const es = document.getElementById('emptyState');
   if (total===0 && state.sources.length===0) {
     es.classList.add('show');
+    es.querySelector('.empty-title').textContent = 'No library sources loaded';
     es.querySelector('.empty-sub').innerHTML =
-      'Click <strong>+ Add Source</strong> and enter a library URL to get started.';
+      'Click <strong>+ Add Source</strong> and enter a library URL to get started, or <a class="src-index-link empty-index-link" href="#">click here to add the library index immediately</a>.';
+    es.querySelector('.empty-index-link').addEventListener('click', e => {
+      e.preventDefault();
+      openAddDialog(true);
+      document.getElementById('addUrl').value = 'github:Auchrio/OpenLibrary';
+      document.getElementById('addUrl').focus();
+    });
   } else if (total===0 && state.sources.length>0) {
     es.classList.add('show');
-    es.querySelector('.empty-sub').textContent = 'Loading libraries…';
+    es.querySelector('.empty-title').textContent = 'No books found';
+    es.querySelector('.empty-sub').innerHTML =
+      'Your sources loaded but returned no books. Try clicking <strong>↺ Refresh</strong> in the Sources manager, or check that your library URLs are correct.';
   } else {
     es.classList.remove('show');
   }
@@ -299,7 +308,14 @@ function renderChips() {
   list.innerHTML = '';
 
   if (state.sources.length === 0) {
-    list.innerHTML = '<div class="src-empty">No sources added yet.</div>';
+    list.innerHTML = '<div class="src-empty">No sources added yet, <a class="src-index-link" href="#">click here to add the library index.</a></div>';
+    list.querySelector('.src-index-link').addEventListener('click', e => {
+      e.preventDefault();
+      closeSourcesManager();
+      openAddDialog(true);
+      document.getElementById('addUrl').value = 'github:Auchrio/OpenLibrary';
+      document.getElementById('addUrl').focus();
+    });
   } else {
     for (const src of state.sources) {
       const url = normaliseUrl(src.url);
@@ -337,8 +353,10 @@ function renderChips() {
 
   // Update button label
   const n = state.sources.length;
+  const srcBtn = document.getElementById('btnSources');
   document.getElementById('srcBtnLabel').textContent =
-    n === 0 ? '📚 Sources' : `📚 Sources (${n})`;
+    n === 0 ? '+ Add Source' : `📚 Sources (${n})`;
+  srcBtn.classList.toggle('btn-sources--cta', n === 0);
 
   list.querySelectorAll('.src-btn').forEach(btn => {
     btn.addEventListener('click', e => {
