@@ -10,6 +10,22 @@ Books are served from ordinary file hosts (GitHub, any raw HTTP server). The web
 
 ---
 
+## Screenshots
+
+### Library with Books Loaded
+![Library with Books](assets/full.png)
+
+### Empty Library
+![Empty Library](assets/empty.png)
+
+### Built-in EPUB Reader
+![EPUB Reader](assets/reader.png)
+
+### Book Download Page
+![Download Page](assets/download.png)
+
+---
+
 ## Table of Contents
 
 - [How it Works](#how-it-works)
