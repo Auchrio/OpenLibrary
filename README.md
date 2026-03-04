@@ -5,7 +5,7 @@
 A decentralised, encrypted ebook library system with no authentication, no usage limits, and no single point of failure.  
 Books are served from ordinary file hosts (GitHub, any raw HTTP server). The web UI runs entirely in the browser — no backend, no tracking, no accounts.
 
-> **📚 Public Libraries** — see [INDEX.md](INDEX.md) for a list of publicly available libraries you can add as sources right now.  
+> **📚 Public Libraries** — To instantly get access to all the books in public librarys, just import the source `github:Auchrio/OpenLibrary`
 > **⚙️ Technical Deep-Dive** — see [TECHNICALS.md](TECHNICALS.md) for a detailed explanation of how everything works under the hood.
 
 ---
