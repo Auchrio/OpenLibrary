@@ -2,3 +2,4 @@ zephyrus-cli.source/
 test.before/
 test/
 __pycache__/
+dist/
