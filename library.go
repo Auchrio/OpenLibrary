@@ -20,7 +20,9 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -250,6 +252,164 @@ type BookGroup struct {
 	Meta        BookMeta
 	FormatFiles map[string]string // format ("epub","mobi") -> filepath
 	FileSizes   map[string]int64
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// PDF helpers
+// ────────────────────────────────────────────────────────────────────────────
+
+// pdfLiteralString decodes a PDF literal string (between parentheses).
+// Handles octal escapes (\ddd), common backslash sequences, and UTF-16BE BOM.
+func pdfLiteralString(s string) string {
+	var out []byte
+	i := 0
+	for i < len(s) {
+		if s[i] == '\\' && i+1 < len(s) {
+			i++
+			switch s[i] {
+			case 'n':
+				out = append(out, '\n')
+			case 'r':
+				out = append(out, '\r')
+			case 't':
+				out = append(out, '\t')
+			case 'b':
+				out = append(out, '\b')
+			case 'f':
+				out = append(out, '\f')
+			case '(', ')', '\\':
+				out = append(out, s[i])
+			default:
+				// Try octal: \ddd
+				if s[i] >= '0' && s[i] <= '7' {
+					octal := string(s[i])
+					for j := 1; j <= 2 && i+j < len(s) && s[i+j] >= '0' && s[i+j] <= '7'; j++ {
+						octal += string(s[i+j])
+						i++
+					}
+					var v int
+					fmt.Sscanf(octal, "%o", &v)
+					out = append(out, byte(v))
+				} else {
+					out = append(out, s[i])
+				}
+			}
+		} else {
+			out = append(out, s[i])
+		}
+		i++
+	}
+	// Handle UTF-16BE BOM (\xFE\xFF)
+	if len(out) >= 2 && out[0] == 0xFE && out[1] == 0xFF {
+		// Decode UTF-16BE pairs
+		var runes []rune
+		for j := 2; j+1 < len(out); j += 2 {
+			runes = append(runes, rune(uint16(out[j])<<8|uint16(out[j+1])))
+		}
+		return string(runes)
+	}
+	return string(out)
+}
+
+// parsePDFMeta attempts to extract title and author from the PDF Info
+// dictionary. Many PDFs (especially those under 100 MB) store the Info dict
+// in plain text; compressed object streams will return empty strings.
+func parsePDFMeta(filePath string) (title, author string) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return
+	}
+	// Match literal string values: /Key (value)
+	literal := regexp.MustCompile(`/(?:Title|Author)\s*\(([^\\)]*(?:\\.[^\\)]*)*)\)`)
+	// Match hex-encoded string values: /Key <hexstring>
+	hex := regexp.MustCompile(`/(?:Title|Author)\s*<([0-9A-Fa-f]+)>`)
+
+	for _, m := range literal.FindAllSubmatch(data, -1) {
+		key := string(m[0])
+		val := strings.TrimSpace(pdfLiteralString(string(m[1])))
+		if strings.Contains(key, "/Title") && title == "" {
+			title = val
+		} else if strings.Contains(key, "/Author") && author == "" {
+			author = val
+		}
+	}
+	for _, m := range hex.FindAllSubmatch(data, -1) {
+		key := string(m[0])
+		hexStr := string(m[1])
+		var decoded []byte
+		for i := 0; i+1 < len(hexStr); i += 2 {
+			var b byte
+			fmt.Sscanf(hexStr[i:i+2], "%02x", &b)
+			decoded = append(decoded, b)
+		}
+		var val string
+		if len(decoded) >= 2 && decoded[0] == 0xFE && decoded[1] == 0xFF {
+			// UTF-16BE
+			var runes []rune
+			for j := 2; j+1 < len(decoded); j += 2 {
+				runes = append(runes, rune(uint16(decoded[j])<<8|uint16(decoded[j+1])))
+			}
+			val = strings.TrimSpace(string(runes))
+		} else {
+			val = strings.TrimSpace(string(decoded))
+		}
+		if strings.Contains(key, "/Title") && title == "" {
+			title = val
+		} else if strings.Contains(key, "/Author") && author == "" {
+			author = val
+		}
+	}
+	return
+}
+
+// extractPDFCover renders the first page of a PDF to a JPEG using whatever
+// external rasteriser is available on PATH (pdftoppm, mutool, convert).
+// Returns nil if no tool is found or rendering fails.
+func extractPDFCover(filePath string) ([]byte, string) {
+	tmpDir, err := os.MkdirTemp("", "pdfcover*")
+	if err != nil {
+		return nil, ""
+	}
+	defer os.RemoveAll(tmpDir)
+
+	outPrefix := filepath.Join(tmpDir, "cover")
+
+	// ── pdftoppm (poppler) ──────────────────────────────────────────────────
+	if _, err := exec.LookPath("pdftoppm"); err == nil {
+		cmd := exec.Command("pdftoppm", "-r", "150", "-jpeg", "-f", "1", "-l", "1", filePath, outPrefix)
+		if cmd.Run() == nil {
+			matches, _ := filepath.Glob(outPrefix + "*.jpg")
+			if len(matches) > 0 {
+				if data, err := os.ReadFile(matches[0]); err == nil {
+					return data, "image/jpeg"
+				}
+			}
+		}
+	}
+
+	// ── mutool (MuPDF) ──────────────────────────────────────────────────────
+	if _, err := exec.LookPath("mutool"); err == nil {
+		outFile := outPrefix + ".jpg"
+		cmd := exec.Command("mutool", "rasterize", "-r", "150", "-o", outFile, filePath, "1")
+		if cmd.Run() == nil {
+			if data, err := os.ReadFile(outFile); err == nil {
+				return data, "image/jpeg"
+			}
+		}
+	}
+
+	// ── ImageMagick convert ──────────────────────────────────────────────────
+	if _, err := exec.LookPath("convert"); err == nil {
+		outFile := outPrefix + ".jpg"
+		cmd := exec.Command("convert", "-density", "150", "-quality", "85", filePath+"[0]", outFile)
+		if cmd.Run() == nil {
+			if data, err := os.ReadFile(outFile); err == nil {
+				return data, "image/jpeg"
+			}
+		}
+	}
+
+	return nil, ""
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -549,23 +709,18 @@ func main() {
 	}
 
 	// ── Phase 1: collect EPUB files first, keyed by lowercase filename stem.
-	// Derivative formats (mobi, azw3, pdf) are only accepted when a matching
-	// EPUB stem exists, so we do two passes.
+	// Derivative formats (mobi, azw3) are only accepted when a matching EPUB
+	// stem exists. PDFs are attached if a matching EPUB exists, otherwise they
+	// become standalone entries.
 	groups := map[string]*BookGroup{} // stem → group
-
-	// Supported derivative formats (require a paired EPUB).
-	derivativeExts := map[string]bool{
-		".mobi": true,
-		".azw3": true,
-		".pdf":  true,
-	}
 
 	// Collect paths by stem for the second pass.
 	type pendingFile struct {
 		path   string
 		format string
 	}
-	derivatives := []pendingFile{}
+	derivatives := []pendingFile{} // mobi, azw3
+	pendingPDFs := []pendingFile{} // pdf — may be standalone
 
 	err := filepath.WalkDir(inputDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
@@ -574,7 +729,8 @@ func main() {
 		ext := strings.ToLower(filepath.Ext(path))
 		stem := strings.ToLower(strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)))
 
-		if ext == ".epub" {
+		switch ext {
+		case ".epub":
 			meta, err := parseEPUB(path)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Warning: skipping %s: %v\n", filepath.Base(path), err)
@@ -593,8 +749,10 @@ func main() {
 			if info, err := os.Stat(path); err == nil {
 				g.FileSizes["epub"] = info.Size()
 			}
-		} else if derivativeExts[ext] {
+		case ".mobi", ".azw3":
 			derivatives = append(derivatives, pendingFile{path: path, format: ext[1:]})
+		case ".pdf":
+			pendingPDFs = append(pendingPDFs, pendingFile{path: path, format: "pdf"})
 		}
 		return nil
 	})
@@ -603,8 +761,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	// ── Phase 2: attach derivative formats to their paired EPUB group.
-	// Files with no matching EPUB stem are silently ignored.
+	// ── Phase 2: attach mobi/azw3 derivatives to their paired EPUB group.
+	// Files with no matching EPUB stem are skipped.
 	for _, pf := range derivatives {
 		stem := strings.ToLower(strings.TrimSuffix(filepath.Base(pf.path), filepath.Ext(pf.path)))
 		g, ok := groups[stem]
@@ -618,8 +776,58 @@ func main() {
 		}
 	}
 
+	// ── Phase 3: process PDFs — attach to existing EPUB group if one exists,
+	// otherwise create a standalone group for the PDF.
+	for _, pf := range pendingPDFs {
+		stem := strings.ToLower(strings.TrimSuffix(filepath.Base(pf.path), filepath.Ext(pf.path)))
+		if g, ok := groups[stem]; ok {
+			// PDF companion to an EPUB — just attach it.
+			g.FormatFiles["pdf"] = pf.path
+			if info, err := os.Stat(pf.path); err == nil {
+				g.FileSizes["pdf"] = info.Size()
+			}
+			continue
+		}
+
+		// Standalone PDF — extract what metadata we can.
+		pdfTitle, pdfAuthor := parsePDFMeta(pf.path)
+		if pdfTitle == "" {
+			// Clean up the filename: replace underscores/hyphens with spaces.
+			base := strings.TrimSuffix(filepath.Base(pf.path), filepath.Ext(pf.path))
+			base = strings.ReplaceAll(base, "_", " ")
+			base = strings.ReplaceAll(base, "-", " ")
+			pdfTitle = strings.TrimSpace(base)
+		}
+		if pdfAuthor == "" {
+			pdfAuthor = "Unknown"
+		}
+
+		fmt.Printf("  PDF (standalone): %s — %s\n", pdfTitle, pdfAuthor)
+
+		// Try to render the first page as a cover image.
+		coverBytes, coverType := extractPDFCover(pf.path)
+		if coverBytes == nil {
+			fmt.Fprintf(os.Stderr, "  Info: no cover extracted for %s (install pdftoppm, mutool, or convert)\n", filepath.Base(pf.path))
+		}
+
+		meta := BookMeta{
+			Title:      pdfTitle,
+			Author:     pdfAuthor,
+			CoverBytes: coverBytes,
+			CoverType:  coverType,
+		}
+		groups[stem] = &BookGroup{
+			Meta:        meta,
+			FormatFiles: map[string]string{"pdf": pf.path},
+			FileSizes:   map[string]int64{},
+		}
+		if info, err := os.Stat(pf.path); err == nil {
+			groups[stem].FileSizes["pdf"] = info.Size()
+		}
+	}
+
 	if len(groups) == 0 {
-		fmt.Println("No EPUB books found in input directory. Writing metadata only.")
+		fmt.Println("No EPUB or standalone PDF books found in input directory. Writing metadata only.")
 		// Still write lib.json so name/links changes are persisted
 		indexJSON, _ := json.MarshalIndent(existingIndex, "", "  ")
 		encIndex, encErr := encryptWithPassword(indexJSON, password)

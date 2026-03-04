@@ -14,18 +14,23 @@ cd OpenLibrary
 
 ## Step 1: Prepare Your Books
 
-1. Create a folder with your ebook files (EPUB, MOBI, PDF, AZWZ3 formats supported) *please ensure any books have an epub version, as this version is used to get the book metadata.*
+1. Create a folder with your ebook files — supported formats: **EPUB, MOBI, AZW3, PDF**
 2. The CLI will automatically:
-   - Extract title, author, and series info from metadata
-   - Detect multi-format variants of the same book
-   - Extract and encrypt cover images
-   - Assign unique encryption keys to each book
+   - Extract title, author, and series info from EPUB/MOBI/AZW3 metadata
+   - Use PDF Info metadata (title, author) for standalone PDFs, falling back to the filename
+   - Render the first page of a standalone PDF as a cover image (requires `pdftoppm`, `mutool`, or `convert` — see [PDF cover generation](#pdf-cover-generation))
+   - Detect multi-format variants of the same book (e.g. an EPUB and PDF with the same filename)
+   - Assign unique encryption keys per book
+
+> **Tip:** For the best results, always include an EPUB version where available — EPUB metadata and cover extraction is the most reliable.
 
 ```
 ~/my-books/
-├── book1.epub
-├── book2.pdf
-└── book3.mobi
+├── book1.epub         ← full metadata + cover from EPUB
+├── book2.epub
+├── book2.pdf          ← attached as a second format alongside the EPUB
+├── standalone.pdf     ← PDF-only: title from metadata/filename, cover from first page
+└── book3.mobi         ← only included if a matching book3.epub exists
 ```
 
 ## Step 2: Build Your Library
@@ -101,11 +106,24 @@ Share your library publicly:
 
 See [INDEX.md](INDEX.md) for details and existing libraries.
 
+## PDF Cover Generation
+
+For standalone PDF files, the CLI attempts to render the first page as a cover image using one of the following tools. Install whichever is most convenient for your system:
+
+| Tool | Install (Linux) | Install (Windows) |
+|------|----------------|-------------------|
+| **pdftoppm** (Poppler) | `sudo apt install poppler-utils` | [Poppler for Windows](https://github.com/oschwartz10612/poppler-windows/releases) |
+| **mutool** (MuPDF) | `sudo apt install mupdf-tools` | [MuPDF Downloads](https://mupdf.com/downloads/) |
+| **convert** (ImageMagick) | `sudo apt install imagemagick` | [ImageMagick Download](https://imagemagick.org/script/download.php) |
+
+If none of these tools are installed, the PDF will still be indexed and downloadable — it just won't have a cover image.
+
 ## Troubleshooting
 
 - **"CORS error"** — Your host must send `Access-Control-Allow-Origin: *` headers
 - **"Failed to decrypt"** — Ensure the correct password (if any) is entered when adding the source
-- **Missing covers** — The CLI extracts covers from EPUB (preferred) or MOBI files
+- **Missing covers on PDFs** — Install `pdftoppm`, `mutool`, or `convert` (see [PDF cover generation](#pdf-cover-generation))
+- **PDF shows "Unknown" author** — The PDF's Info dictionary doesn't contain author metadata; rename the file or edit the PDF metadata
 
 For more details, see [TECHNICALS.md](TECHNICALS.md).
 

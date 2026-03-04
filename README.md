@@ -209,21 +209,19 @@ All encryption uses **AES-256-GCM** and is handled identically by the Go CLI and
 
 ### Prerequisites
 
-* **Go 1.21 or later** — https://go.dev/dl
-* This repository cloned locally:
+* Download the prebuilt `library` binary for your platform from [Releases](https://github.com/Auchrio/OpenLibrary/releases), or [build from source](setup.md#building-from-source-optional).
 
-```sh
-git clone https://github.com/Auchrio/OpenLibrary
-cd OpenLibrary
-```
+For a full step-by-step guide see **[setup.md](setup.md)**.
 
 ### Preparing Your Books
 
-Collect your EPUB, MOBI, and/or PDF files into a single input folder. The CLI will automatically:
+Collect your EPUB, MOBI, AZW3, and/or PDF files into a single input folder. The CLI will automatically:
 
-* Read the embedded title, author, series, and series index from EPUB/MOBI metadata.
-* Detect when several format variants of the same book are present and combine them under one index entry.
-* Extract and separately encrypt the cover image (EPUB preferred, MOBI as fallback).
+* Read the embedded title, author, series, and series index from EPUB/MOBI/AZW3 metadata.
+* For **standalone PDF files** (no matching EPUB): extract title and author from the PDF Info dictionary, falling back to the filename for the title and `"Unknown"` for the author.
+* Render the **first page of a standalone PDF** as a cover image if `pdftoppm`, `mutool`, or `convert` (ImageMagick) is available on `PATH`.
+* Detect when several format variants of the same book are present (matched by filename stem) and combine them under one index entry.
+* Extract and separately encrypt the cover image (EPUB preferred, PDF page render as fallback for PDF-only books).
 * Assign a random UUID and a unique random 256-bit encryption key to each book.
 
 Supported input formats: `epub`, `mobi`, `pdf`, `azw3`.
@@ -231,7 +229,9 @@ Supported input formats: `epub`, `mobi`, `pdf`, `azw3`.
 ### Running the CLI
 
 ```sh
-go run library.go <input-folder> <output-folder> [encryption-key]
+./library <input-folder> <output-folder> [encryption-key]
+# Windows:
+library.exe <input-folder> <output-folder> [encryption-key]
 ```
 
 | Argument | Required | Description |
@@ -243,7 +243,7 @@ go run library.go <input-folder> <output-folder> [encryption-key]
 **Example — build a public library:**
 
 ```sh
-go run library.go ~/Books/Fantasy ~/my-library-output
+./library ~/Books/Fantasy ~/my-library-output
 ```
 
 This produces `~/my-library-output/lib.json` and one or more `.enc` files per book.
